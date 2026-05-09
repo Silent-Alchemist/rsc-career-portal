@@ -638,30 +638,30 @@ function App() {
     }`}>
       {/* --- UNIFIED BRANDED HEADER --- */}
       <header className="relative w-full px-4 md:px-12 py-6 md:py-10 no-print flex flex-col items-center gap-6">
-        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="w-full flex flex-row items-center justify-between">
           {/* Left: RSC Logo (Absolute Position) */}
           <div 
             onClick={() => setActiveTab('profile')} 
-            className="absolute left-12 top-1/2 -translate-y-1/2 flex items-center gap-4 cursor-pointer group transition-all z-20"
+            className="flex items-center gap-3 cursor-pointer group transition-all"
           >
-            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-cyan-500/50 transition-all shadow-2xl">
-              <img src="/assets/rsc-shield.png" alt="RSC" className="w-8 h-8 object-contain" />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-white/5 rounded-xl md:rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-cyan-500/50 transition-all">
+              <img src="/assets/rsc-shield.png" alt="RSC" className="w-6 h-6 md:w-8 md:h-8 object-contain" />
             </div>
-            <div className="hidden lg:block">
-              <h1 className="text-xl font-black italic uppercase tracking-tighter text-white group-hover:text-cyan-400 transition-colors leading-none">
+            <div className="hidden sm:block">
+              <h1 className="text-sm md:text-xl font-black italic uppercase tracking-tighter text-white leading-none">
                 RSC <span className="text-cyan-500">Portal</span>
               </h1>
-              <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Intelligence</p>
+              <p className="text-[6px] md:text-[7px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Intelligence</p>
             </div>
           </div>
 
           {/* Right: Interaction Hub (Absolute Position) */}
-          <div className="absolute right-12 top-1/2 -translate-y-1/2 z-20 flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             
             {/* Theme Toggle */}
             <button 
               onClick={() => setTheme(theme === 'midnight' ? 'royal' : 'midnight')}
-              className="relative group p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 flex items-center justify-center overflow-hidden"
+              className="relative p-3 md:p-4 rounded-xl md:rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 overflow-hidden flex items-center justify-center"
             >
               <div className={`absolute inset-0 transition-opacity duration-500 ${theme === 'royal' ? 'bg-blue-500/20 opacity-100' : 'opacity-0'}`} />
               {theme === 'midnight' ? (
@@ -692,7 +692,7 @@ function App() {
 
         {/* CENTER: RSC MyCareer Title */}
         <div className="text-center relative z-10">
-          <h1 className="text-6xl font-black italic tracking-tighter text-blue-500 uppercase drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]"> 
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic tracking-tighter text-blue-500 uppercase drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
             RSC <span className="bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent underline decoration-yellow-500 decoration-4 pr-2 animate-gold-glow drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">MyCareer</span> 
           </h1>
           <p className="text-slate-500 font-bold uppercase tracking-[0.4em] mt-2 text-[10px]">Legacy Statistics Portal</p>
@@ -985,7 +985,7 @@ function App() {
                           </div>
                         </div>
                         {/* --- REFINED EVOLUTIONARY OVR BADGE --- */}
-                        <div className="ml-auto relative group flex flex-col items-center justify-center min-w-[160px] flex-shrink-0">
+                        <div className="md:ml-auto relative group flex flex-col items-center justify-center min-w-[140px] md:min-w-[160px] flex-shrink-0 mt-6 md:mt-0">
                           {/* Dynamic Aura Glow */}
                           <div className={`absolute inset-0 blur-[60px] rounded-full transition-all duration-1000 
                             ${calculateOVR(playerHistory) >= 99 ? 'bg-yellow-400/30 scale-110 animate-pulse' : 
@@ -1094,7 +1094,7 @@ function App() {
                         </div>
                       )}
 
-                      <div id="table-wrapper" className="p-4 md:p-12 overflow-x-auto no-scrollbar">
+                      <div id="table-wrapper" className="p-4 md:p-12 overflow-x-auto scrollbar-hide">
                         <table className="min-w-[800px] md:w-full text-left border-collapse">
                           <thead>
                             <tr className="text-slate-600 text-[10px] font-black uppercase border-b border-white/5 pb-6">
@@ -1722,10 +1722,10 @@ function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 animate-in fade-in duration-700">
+          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0 animate-in fade-in duration-700">
             
             {/* --- CREDITS SECTION --- */}
-            <section className="text-center bg-blue-500/5 border border-blue-500/20 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
+            <section className="text-center bg-blue-500/5 border border-blue-500/20 p-6 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
               <h2 className="text-[12px] font-black uppercase text-blue-500 mb-4 tracking-[0.5em]">Portal Credits</h2>
               <div className="space-y-2">
@@ -1880,7 +1880,7 @@ function App() {
               {/* The "Cold Energy" Glow Effect */}
               <div className="absolute inset-0 bg-blue-500/10 blur-[120px] rounded-full scale-75 animate-pulse pointer-events-none" />
               
-              <div className="relative z-10 bg-gradient-to-br from-[#050b14] to-[#020408] border border-sky-500/20 rounded-[3rem] p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
+              <div className="relative z-10 bg-gradient-to-br from-[#050b14] to-[#020408] border border-sky-500/20 rounded-[3rem] p-6 md:p-12 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
                 <div className="flex flex-col md:flex-row items-center gap-10">
                   
                   {/* Profile Picture with Icy Ring */}

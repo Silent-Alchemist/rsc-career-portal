@@ -597,31 +597,36 @@ function App() {
   };
 
   const downloadCard = () => {
-    const node = document.getElementById('stat-card');
-    
-    // 1. Save original styles
-    const originalWidth = node.style.width;
-    
-    // 2. Force desktop width for the snapshot (Standard Stat Card Width)
-    node.style.width = '1200px';
+  const node = document.getElementById('stat-card');
   
-    toPng(node, { 
-      filter: (n) => !n.classList?.contains('no-print'),
-      cacheBust: true 
+  // 1. Capture current state to revert later
+  const originalStyle = node.style.cssText;
+
+  // 2. Force a high-fidelity "Desktop" layout for the snapshot
+  node.style.width = '1200px';
+  node.style.height = 'auto';
+  node.style.transform = 'scale(1)'; // Ensure no zoom interference
+
+  toPng(node, { 
+    filter: (n) => !n.classList?.contains('no-print'),
+    cacheBust: true,
+    pixelRatio: 2, // This doubles the resolution (Retina quality)
+    backgroundColor: '#010205' // Ensures no transparent gaps
+  })
+    .then((dataUrl) => {
+      // 3. Revert to the responsive mobile style immediately
+      node.style.cssText = originalStyle;
+      
+      const link = document.createElement('a');
+      link.download = `RSC-Career-${getStat(latest, 'name')}.png`;
+      link.href = dataUrl;
+      link.click();
     })
-      .then((dataUrl) => {
-        // 3. Revert style back to responsive
-        node.style.width = originalWidth;
-        
-        const link = document.createElement('a');
-        link.download = `RSC-Career-${getStat(latest, 'name')}.png`;
-        link.href = dataUrl;
-        link.click();
-      })
-      .catch(() => {
-        node.style.width = originalWidth; // Ensure it resets if it fails
-      });
-  };
+    .catch((err) => {
+      console.error("Download failed", err);
+      node.style.cssText = originalStyle;
+    });
+};
 
   const sortedAccolades = [...accolades].sort((a, b) => {
     if (typeWeights[a.type] !== typeWeights[b.type]) return typeWeights[a.type] - typeWeights[b.type];
@@ -860,7 +865,7 @@ function App() {
                 </div>
                 
                 <div className="relative aspect-square w-full flex items-center justify-center">
-                  <svg viewBox="0 -15 100 125" className="w-full h-auto overflow-visible">
+                  <svg viewBox="-20 -15 140 125" className="w-full h-auto overflow-visible">
                     {/* Reference Numbers */}
                     <text x="50" y="52" fill="white" fontSize="4" opacity="0.3" textAnchor="middle">0</text>
                     <text x="50" y="26" fill="white" fontSize="4" opacity="0.3" textAnchor="middle">50</text>
@@ -1052,7 +1057,7 @@ function App() {
                       </div>
 
                       {/* MILESTONES (HALL OF FAME) */}
-                      <div className="flex gap-10 px-12 py-8 border-b border-white/5 bg-white/[0.01]">
+                      <div className="flex flex-wrap justify-center md:justify-start gap-6 md:gap-10 px-6 md:px-12 py-8 border-b border-white/5 bg-white/[0.01]">
                         {getCareerMilestones().map((m, i) => (
                           <div key={i} className="flex items-center gap-4">
                             <span className="text-2xl">{m.icon}</span>
@@ -1067,7 +1072,7 @@ function App() {
                       {sortedAccolades.length > 0 && (
                         <div className="bg-yellow-500/5 p-8 px-12 border-b border-white/5 no-scrollbar">
                           {/* Use a grid that forces 4 columns by default, and stays side-by-side */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-y-8 gap-x-10">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-y-6 md:gap-y-8 gap-x-10">
                             {sortedAccolades.map((a, i) => (
                               <div key={i} className="relative group flex items-center gap-3 min-w-0">
                                 <button 
@@ -1805,7 +1810,7 @@ function App() {
             </section>
 
             {/* --- METRIC DEFINITIONS --- */}
-            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
               <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
                 <h3 className="text-cyan-400 font-black uppercase text-xs mb-3 tracking-widest">SBV (Skill-Based Value)</h3>
                 <p className="text-[12px] text-slate-500 leading-relaxed italic">
@@ -1853,7 +1858,7 @@ function App() {
             {/* --- STATISTICAL LITERACY --- */}
             <section className="bg-slate-900/50 p-8 rounded-[3rem] border border-white/5">
               <h3 className="text-xl font-black uppercase italic text-white mb-6 text-center">Understanding Comparison Data</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 w-full overflow-hidden">
                 <div className="space-y-4">
                   <h4 className="text-yellow-300 font-black uppercase text-[14px] tracking-widest">Mean vs. Percentile</h4>
                   <p className="text-[12px] text-slate-500 leading-relaxed">

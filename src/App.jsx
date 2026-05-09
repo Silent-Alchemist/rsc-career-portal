@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react';
 import React, { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { toPng } from 'html-to-image';
@@ -1948,6 +1949,7 @@ function App() {
         </p>
       </div>
 
+      <Analytics />
     </div>
   );
 }

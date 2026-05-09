@@ -1727,33 +1727,37 @@ function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-6 md:px-0 animate-in fade-in duration-700 overflow-x-hidden">
+          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0 animate-in fade-in duration-700">
             
             {/* --- CREDITS SECTION --- */}
-            <section className="text-center bg-blue-500/5 border border-blue-500/20 p-6 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
-              <h2 className="text-[12px] font-black uppercase text-blue-500 mb-4 tracking-[0.5em]">Portal Credits</h2>
-              <div className="space-y-2">
-                <p className="text-2xl font-black italic uppercase text-white tracking-tighter">Developed by iSilently</p>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">In Dedication to the Rocket Soccar Confederation Community</p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 no-print px-4">
-                <a href="https://www.rocketsoccarconfederation.com/" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Website</a>
-                <a href="https://discord.gg/rsc" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Discord</a>
-                <a href="https://x.com/rsconfederation" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">X / Twitter</a>
-                <a href="https://www.twitch.tv/rsc_na" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Twitch</a>
+            <section className="text-center bg-blue-500/5 border border-blue-500/20 p-6 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl relative overflow-hidden overflow-x-auto ghost-scroll">
+              <div className="min-w-[400px] md:min-w-full">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+                <h2 className="text-[12px] font-black uppercase text-blue-500 mb-4 tracking-[0.5em]">Portal Credits</h2>
+                <div className="space-y-2">
+                  <p className="text-2xl font-black italic uppercase text-white tracking-tighter">Developed by iSilently</p>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">In Dedication to the Rocket Soccar Confederation Community</p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 no-print px-4">
+                  <a href="https://www.rocketsoccarconfederation.com/" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Website</a>
+                  <a href="https://discord.gg/rsc" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Discord</a>
+                  <a href="https://x.com/rsconfederation" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">X / Twitter</a>
+                  <a href="https://www.twitch.tv/rsc_na" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Twitch</a>
+                </div>
               </div>
             </section>
 
             {/* --- THE OVR ENGINE --- */}
-            <section>
-              <h2 className="text-3xl font-black italic uppercase text-blue-500 mb-6">The OVR Engine</h2>
-              <p className="text-slate-400 leading-relaxed text-sm md:text-base">
-                The Career OVR is a weighted measurement of a player's performance across their <span className="font-bold">top 3 qualified seasons</span>. 
-                A baseline of <span className="text-white font-bold">75 OVR</span> represents a standard rostered player (50 SBV). 
-                To reach the elusive <span className="text-white font-black italic [text-shadow:_0_0_20px_#fbbf24,_0_0_40px_#f59e0b] inline-block">99 OVR</span>, a player must maintain statistical 
-                dominance in elite tiers over a sustained period.
-              </p>
+            <section className="w-full overflow-x-auto ghost-scroll">
+              <div className="min-w-[380px] md:min-w-full">
+                <h2 className="text-3xl font-black italic uppercase text-blue-500 mb-6">The OVR Engine</h2>
+                <p className="text-slate-400 leading-relaxed text-sm md:text-base">
+                  The Career OVR is a weighted measurement of a player's performance across their <span className="font-bold">top 3 qualified seasons</span>. 
+                  A baseline of <span className="text-white font-bold">75 OVR</span> represents a standard rostered player (50 SBV). 
+                  To reach the elusive <span className="text-white font-black italic [text-shadow:_0_0_20px_#fbbf24,_0_0_40px_#f59e0b] inline-block">99 OVR</span>, a player must maintain statistical 
+                  dominance in elite tiers over a sustained period.
+                </p>
+              </div>
             </section>
 
             {/* --- SEASON QUALIFICATION LOGIC --- */}
@@ -1810,50 +1814,52 @@ function App() {
             </section>
 
             {/* --- METRIC DEFINITIONS --- */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-cyan-400 font-black uppercase text-xs mb-3 tracking-widest">SBV (Skill-Based Value)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  The primary workload metric. It combines total score, efficiency, and impact. A higher SBV indicates a player who 
-                  consistently drives their team's performance.
-                </p>
-              </div>
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-blue-500 font-black uppercase text-xs mb-3 tracking-widest">OFF (Offense)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  Based on Goals Per Game (GPG). Measures raw finishing ability and scoring consistency. High OFF ratings identify 
-                  the most clinical strikers in the league.
-                </p>
-              </div>
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-rose-400 font-black uppercase text-xs mb-3 tracking-widest">PRS (Pressure)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  Derived from Shots Per Game (ShPG). Measures how often a player forces the opposing defense to react. 
-                  High PRS players are often the primary aggressors in the offensive zone.
-                </p>
-              </div>
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-emerald-400 font-black uppercase text-xs mb-3 tracking-widest">SUP (Support)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  Focuses on Assists Per Game (APG). High SUP values indicate a playmaker who facilitates 
-                  scoring opportunities for their teammates through efficient passing.
-                </p>
-              </div>
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-purple-400 font-black uppercase text-xs mb-3 tracking-widest">DEF (Defense)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  Calculated via Saves Per Game (SvPG). Represents a player's reliability as the last line of defense 
-                  and their ability to nullify opposing scoring threats.
-                </p>
-              </div>
-              <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 border-emerald-500/10">
-                <h3 className="text-orange-500 font-black uppercase text-xs mb-3 tracking-widest">WIN (Win Impact)</h3>
-                <p className="text-[12px] text-slate-500 leading-relaxed italic">
-                  Measures a player's Win Rate (Win%) relative to their tier. It identifies "Winners" whose statistical 
-                  contributions translate directly into league standings and points.
-                </p>
-              </div>
-            </section>
+            <div className="w-full overflow-x-auto ghost-scroll pb-4">
+              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-w-[600px] md:min-w-full">
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-cyan-400 font-black uppercase text-xs mb-3 tracking-widest">SBV (Skill-Based Value)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    The primary workload metric. It combines total score, efficiency, and impact. A higher SBV indicates a player who 
+                    consistently drives their team's performance.
+                  </p>
+                </div>
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-blue-500 font-black uppercase text-xs mb-3 tracking-widest">OFF (Offense)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    Based on Goals Per Game (GPG). Measures raw finishing ability and scoring consistency. High OFF ratings identify 
+                    the most clinical strikers in the league.
+                  </p>
+                </div>
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-rose-400 font-black uppercase text-xs mb-3 tracking-widest">PRS (Pressure)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    Derived from Shots Per Game (ShPG). Measures how often a player forces the opposing defense to react. 
+                    High PRS players are often the primary aggressors in the offensive zone.
+                  </p>
+                </div>
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-emerald-400 font-black uppercase text-xs mb-3 tracking-widest">SUP (Support)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    Focuses on Assists Per Game (APG). High SUP values indicate a playmaker who facilitates 
+                    scoring opportunities for their teammates through efficient passing.
+                  </p>
+                </div>
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
+                  <h3 className="text-purple-400 font-black uppercase text-xs mb-3 tracking-widest">DEF (Defense)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    Calculated via Saves Per Game (SvPG). Represents a player's reliability as the last line of defense 
+                    and their ability to nullify opposing scoring threats.
+                  </p>
+                </div>
+                <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 border-emerald-500/10">
+                  <h3 className="text-orange-500 font-black uppercase text-xs mb-3 tracking-widest">WIN (Win Impact)</h3>
+                  <p className="text-[12px] text-slate-500 leading-relaxed italic">
+                    Measures a player's Win Rate (Win%) relative to their tier. It identifies "Winners" whose statistical 
+                    contributions translate directly into league standings and points.
+                  </p>
+                </div>
+              </section>
+            </div>
 
             {/* --- STATISTICAL LITERACY --- */}
             <section className="bg-slate-900/50 p-8 rounded-[3rem] border border-white/5">

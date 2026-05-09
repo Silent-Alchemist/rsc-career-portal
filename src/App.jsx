@@ -597,17 +597,29 @@ function App() {
   };
 
   const downloadCard = () => {
-    // Add the filter to hide .no-print elements during PNG generation
-    const filter = (node) => {
-      return !node.classList?.contains('no-print');
-    };
-
-    toPng(document.getElementById('stat-card'), { filter, cacheBust: true })
+    const node = document.getElementById('stat-card');
+    
+    // 1. Save original styles
+    const originalWidth = node.style.width;
+    
+    // 2. Force desktop width for the snapshot (Standard Stat Card Width)
+    node.style.width = '1200px';
+  
+    toPng(node, { 
+      filter: (n) => !n.classList?.contains('no-print'),
+      cacheBust: true 
+    })
       .then((dataUrl) => {
+        // 3. Revert style back to responsive
+        node.style.width = originalWidth;
+        
         const link = document.createElement('a');
         link.download = `RSC-Career-${getStat(latest, 'name')}.png`;
         link.href = dataUrl;
         link.click();
+      })
+      .catch(() => {
+        node.style.width = originalWidth; // Ensure it resets if it fails
       });
   };
 
@@ -619,69 +631,71 @@ function App() {
   const latest = playerHistory[0] || null;
 
   return (
-    <div className={`min-h-screen transition-colors duration-1000 p-4 md:p-8 font-sans ${
+    <div className={`min-h-screen transition-colors duration-1000 p-2 md:p-8 font-sans overflow-x-hidden ${
       theme === 'midnight' 
         ? 'bg-[#03050a] text-slate-200' 
         : 'bg-[#0a1931] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e3a8a]/20 via-[#0a1931] to-[#020617] text-blue-100'
     }`}>
       {/* --- UNIFIED BRANDED HEADER --- */}
-      <header className="relative w-full px-12 py-10 no-print">
-        {/* Left: RSC Logo (Absolute Position) */}
-        <div 
-          onClick={() => setActiveTab('profile')} 
-          className="absolute left-12 top-1/2 -translate-y-1/2 flex items-center gap-4 cursor-pointer group transition-all z-20"
-        >
-          <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-cyan-500/50 transition-all shadow-2xl">
-            <img src="/assets/rsc-shield.png" alt="RSC" className="w-8 h-8 object-contain" />
+      <header className="relative w-full px-4 md:px-12 py-6 md:py-10 no-print flex flex-col items-center gap-6">
+        <div className="w-full flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Left: RSC Logo (Absolute Position) */}
+          <div 
+            onClick={() => setActiveTab('profile')} 
+            className="absolute left-12 top-1/2 -translate-y-1/2 flex items-center gap-4 cursor-pointer group transition-all z-20"
+          >
+            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 group-hover:border-cyan-500/50 transition-all shadow-2xl">
+              <img src="/assets/rsc-shield.png" alt="RSC" className="w-8 h-8 object-contain" />
+            </div>
+            <div className="hidden lg:block">
+              <h1 className="text-xl font-black italic uppercase tracking-tighter text-white group-hover:text-cyan-400 transition-colors leading-none">
+                RSC <span className="text-cyan-500">Portal</span>
+              </h1>
+              <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Intelligence</p>
+            </div>
           </div>
-          <div className="hidden lg:block">
-            <h1 className="text-xl font-black italic uppercase tracking-tighter text-white group-hover:text-cyan-400 transition-colors leading-none">
-              RSC <span className="text-cyan-500">Portal</span>
-            </h1>
-            <p className="text-[7px] font-black uppercase tracking-[0.3em] text-slate-500 mt-1">Intelligence</p>
+
+          {/* Right: Interaction Hub (Absolute Position) */}
+          <div className="absolute right-12 top-1/2 -translate-y-1/2 z-20 flex items-center gap-3">
+            
+            {/* Theme Toggle */}
+            <button 
+              onClick={() => setTheme(theme === 'midnight' ? 'royal' : 'midnight')}
+              className="relative group p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 flex items-center justify-center overflow-hidden"
+            >
+              <div className={`absolute inset-0 transition-opacity duration-500 ${theme === 'royal' ? 'bg-blue-500/20 opacity-100' : 'opacity-0'}`} />
+              {theme === 'midnight' ? (
+                <span className="relative z-10 text-slate-400 group-hover:text-cyan-400 text-lg transition-colors">🌙</span>
+              ) : (
+                <span className="relative z-10 text-blue-300 group-hover:text-white text-lg transition-colors">❄️</span>
+              )}
+            </button>
+  
+            {/* Discord Link */}
+            <a 
+              href="https://discord.gg/rsc" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="relative group flex items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 overflow-visible"
+            >
+              <div className="absolute inset-0 bg-yellow-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full" />
+              <svg 
+                className="w-6 h-6 text-yellow-500 [filter:drop-shadow(0_0_2px_rgba(234,179,8,0.8))] transition-all group-hover:[filter:drop-shadow(0_0_8px_rgba(234,179,8,0.5))]" 
+                fill="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+              </svg>
+            </a>
           </div>
         </div>
 
-        {/* CENTER: The Big Title */}
+        {/* CENTER: RSC MyCareer Title */}
         <div className="text-center relative z-10">
           <h1 className="text-6xl font-black italic tracking-tighter text-blue-500 uppercase drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]"> 
             RSC <span className="bg-gradient-to-b from-yellow-200 via-yellow-400 to-yellow-600 bg-clip-text text-transparent underline decoration-yellow-500 decoration-4 pr-2 animate-gold-glow drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]">MyCareer</span> 
           </h1>
           <p className="text-slate-500 font-bold uppercase tracking-[0.4em] mt-2 text-[10px]">Legacy Statistics Portal</p>
-        </div>
-
-        {/* Right: Interaction Hub (Absolute Position) */}
-        <div className="absolute right-12 top-1/2 -translate-y-1/2 z-20 flex items-center gap-3">
-          
-          {/* Theme Toggle */}
-          <button 
-            onClick={() => setTheme(theme === 'midnight' ? 'royal' : 'midnight')}
-            className="relative group p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 flex items-center justify-center overflow-hidden"
-          >
-            <div className={`absolute inset-0 transition-opacity duration-500 ${theme === 'royal' ? 'bg-blue-500/20 opacity-100' : 'opacity-0'}`} />
-            {theme === 'midnight' ? (
-              <span className="relative z-10 text-slate-400 group-hover:text-cyan-400 text-lg transition-colors">🌙</span>
-            ) : (
-              <span className="relative z-10 text-blue-300 group-hover:text-white text-lg transition-colors">❄️</span>
-            )}
-          </button>
-
-          {/* Discord Link */}
-          <a 
-            href="https://discord.gg/rsc" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="relative group flex items-center justify-center p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:scale-105 active:scale-95 overflow-visible"
-          >
-            <div className="absolute inset-0 bg-yellow-500/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full" />
-            <svg 
-              className="w-6 h-6 text-yellow-500 [filter:drop-shadow(0_0_2px_rgba(234,179,8,0.8))] transition-all group-hover:[filter:drop-shadow(0_0_8px_rgba(234,179,8,0.5))]" 
-              fill="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515a.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0a12.64 12.64 0 0 0-.617-1.25a.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057a19.9 19.9 0 0 0 5.993 3.03a.078.078 0 0 0 .084-.028a14.09 14.09 0 0 0 1.226-1.994a.076.076 0 0 0-.041-.106a13.107 13.107 0 0 1-1.872-.892a.077.077 0 0 1-.008-.128a10.2 10.2 0 0 0 .372-.292a.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127a12.299 12.299 0 0 1-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028a19.839 19.839 0 0 0 6.002-3.03a.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
-            </svg>
-          </a>
         </div>
       </header>
 
@@ -921,26 +935,26 @@ function App() {
                   </div>
                   {latest ? (
                     <>
-                      <div className="p-12 flex items-center justify-between gap-12 border-b border-white/5 bg-gradient-to-br from-blue-900/10 to-transparent">
-                        <div className="flex items-center gap-10 min-w-0">
+                      <div className="p-6 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 border-b border-white/5 bg-gradient-to-br from-blue-900/10 to-transparent">
+                        <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 min-w-0 text-center md:text-left">
                           <div className="relative flex-shrink-0">
                             <div className="absolute inset-0 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
-                            <div className="w-32 h-32 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/10 relative z-10 backdrop-blur-sm shadow-2xl">
+                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/5 rounded-3xl md:rounded-[2.5rem] flex items-center justify-center border border-white/10 relative z-10 backdrop-blur-sm shadow-2xl">
                               <img 
                                 src={`/assets/franchises/${getStat(latest, 'franchise').split('\n').pop().trim()}.png`} 
                                 onError={(e) => e.target.src = '/assets/rsc-shield.png'} 
-                                className="w-24 h-24 object-contain" 
+                                className="w-16 h-16 md:w-24 md:h-24 object-contain" 
                               />
                             </div>
                           </div>
                           <div className="min-w-0">
                             <p className="font-black text-[16px] uppercase tracking-[0.6em] mb-2 truncate" style={{color: getTierColor(getStat(latest, 'tier'))}}>{getStat(latest, 'tier').split('\n').pop()}</p>
                             <h2 
-                              className="font-black italic uppercase pr-4 tracking-tighter leading-none mb-3 whitespace-nowrap"
+                              className="font-black italic uppercase tracking-tighter leading-none mb-3 whitespace-nowrap text-4xl sm:text-5xl md:text-7xl"
                               style={{ 
                                 fontSize: getStat(latest, 'name').length > 10 
-                                  ? `${Math.max(32, 72 - (getStat(latest, 'name').length - 10) * 3)}px` 
-                                  : '72px' 
+                                  ? `clamp(32px, 8vw, 72px)` // Use clamp to prevent it from ever getting too big/small
+                                  : '' 
                               }}
                             >
                               {getStat(latest, 'name')}
@@ -956,13 +970,13 @@ function App() {
 
                                   return (
                                     <div 
-                                      className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-[0.2em] whitespace-nowrap"
+                                      className="flex flex-wrap justify-center md:justify-start items-center gap-2 md:gap-3 text-slate-400 font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] whitespace-nowrap"
                                       style={{ fontSize: dynamicSize }}
                                     >
                                       <span className="text-white">{franchise}</span> 
-                                      <span className="opacity-20">|</span> 
+                                      <span className="opacity-20 hidden md:inline">|</span>
                                       <span>{team}</span> 
-                                      <span className="opacity-20">|</span> 
+                                      <span className="opacity-20 hidden md:inline">|</span> 
                                       <span className="text-blue-500 font-black">CAR: {mainCar}</span>
                                     </div>
                                   );
@@ -1080,8 +1094,8 @@ function App() {
                         </div>
                       )}
 
-                      <div id="table-wrapper" className="p-12 no-scrollbar">
-                        <table className="w-full text-left border-collapse">
+                      <div id="table-wrapper" className="p-4 md:p-12 overflow-x-auto no-scrollbar">
+                        <table className="min-w-[800px] md:w-full text-left border-collapse">
                           <thead>
                             <tr className="text-slate-600 text-[10px] font-black uppercase border-b border-white/5 pb-6">
                               <th className="pb-6">Season</th><th className="pb-6">Tier</th><th className="pb-6">Franchise</th><th className="pb-6 text-center pr-10">GP</th>

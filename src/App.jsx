@@ -1727,7 +1727,7 @@ function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0 animate-in fade-in duration-700">
+          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-6 md:px-0 animate-in fade-in duration-700 overflow-x-hidden">
             
             {/* --- CREDITS SECTION --- */}
             <section className="text-center bg-blue-500/5 border border-blue-500/20 p-6 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl relative overflow-hidden">
@@ -1737,7 +1737,7 @@ function App() {
                 <p className="text-2xl font-black italic uppercase text-white tracking-tighter">Developed by iSilently</p>
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">In Dedication to the Rocket Soccar Confederation Community</p>
               </div>
-              <div className="flex justify-center gap-8 mt-8 no-print">
+              <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 no-print px-4">
                 <a href="https://www.rocketsoccarconfederation.com/" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Website</a>
                 <a href="https://discord.gg/rsc" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Discord</a>
                 <a href="https://x.com/rsconfederation" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">X / Twitter</a>
@@ -1748,7 +1748,7 @@ function App() {
             {/* --- THE OVR ENGINE --- */}
             <section>
               <h2 className="text-3xl font-black italic uppercase text-blue-500 mb-6">The OVR Engine</h2>
-              <p className="text-slate-400 leading-relaxed">
+              <p className="text-slate-400 leading-relaxed text-sm md:text-base">
                 The Career OVR is a weighted measurement of a player's performance across their <span className="font-bold">top 3 qualified seasons</span>. 
                 A baseline of <span className="text-white font-bold">75 OVR</span> represents a standard rostered player (50 SBV). 
                 To reach the elusive <span className="text-white font-black italic [text-shadow:_0_0_20px_#fbbf24,_0_0_40px_#f59e0b] inline-block">99 OVR</span>, a player must maintain statistical 

@@ -839,7 +839,7 @@ function App() {
               </div>
 
               <div className={`p-6 rounded-3xl shadow-xl transition-all border ${theme === 'royal' ? 'bg-black/40 border-white/10' : 'bg-slate-900 border-white/5'}`}>
-                <h2 className="text-[12px] font-black uppercase text-purple-500 mb-4 tracking-widest">Accolade Builder</h2>
+                <h2 className="text-[12px] font-black uppercase text-purple-500 mb-4 tracking-widest">Select Main Car</h2>
                 <div className="space-y-3">
                   <select
                     value={mainCar}

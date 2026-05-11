@@ -12,7 +12,7 @@ const rlCars = [
   "89 Batmobile", "Ace", "Admiral", "Aftershock", "Animus GP", "Apex", "Armadillo", "Artemis", "Azura",
   "Backfire", "Batmobile (1989)", "Batmobile (2016)", "Batmobile (2022)", "Battle Bus", "Behemoth", "Beskar",
   "BMW 1 Series", "BMW M2 Racing", "BMW M240i", "BMW M3 (E30)", "BMW M4 GT3 EVO", "Bone Shaker", "Breakout",
-  "Breakout Type-S", "Bugatti Centodieci", "Bumblebee", "Centio", "Chikara", "Cyclone", "DeLorean Time Machine",
+  "Breakout Type-S", "Bugatti Centodieci", "Bumblebee", "Centio", "Chikara", "Chrysler Pacifica", "Cyclone", "DeLorean Time Machine",
   "Diestro", "Dingo", "Dominus", "Dominus GT", "Ecto-1", "Emperor", "Endo", "Esper", "Fast & Furious Dodge Charger",
   "Fast & Furious Mazda RX-7", "Fast & Furious Nissan Skyline", "Fennec", "Ferrari 296 GTB", "Ford Bronco Raptor",
   "Ford F-150 RLE", "Ford Mustang GTD", "Formula 1 2022", "Gizmo", "Grog", "Harbinger", "Honda Civic Type R",

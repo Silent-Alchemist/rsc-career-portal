@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; } .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+.ghost-scroll {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.ghost-scroll::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari and Opera */
+}
+
+@keyframes backgroundFlow {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100% 100%; }
+}
+
+.tech-bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Theme Opacity -- ha six seven */
+  opacity: 0.67; 
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+.dots-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(59, 130, 246, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: backgroundFlow 120s linear infinite;
+}
+
+@keyframes pulseLine {
+  0% { transform: translateY(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+.tech-lines-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.circuit-line {
+  position: absolute;
+  width: 2px;
+  height: 300px;
+  background: linear-gradient(to bottom, transparent, rgba(59, 130, 246, 0.8), transparent);
+  filter: blur(1px);
+  animation: pulseLine 8s linear infinite;
+}
+
+/* Variant for horizontal lines */
+.circuit-line-h {
+  position: absolute;
+  height: 2px;
+  width: 300px;
+  background: linear-gradient(to right, transparent, rgba(59, 130, 246, 0.8), transparent);
+  filter: blur(1px);
+  animation: pulseLineH 12s linear infinite;
+}
+
+@keyframes pulseLineH {
+  0% { transform: translateX(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes cyberDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(2%, 2%) scale(1.05); }
+  50% { transform: translate(-1%, 4%) scale(1.1); }
+  75% { transform: translate(-3%, 2%) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes terminalFlicker {
+  0% { opacity: 0.04; }
+  50% { opacity: 0.07; }
+  100% { opacity: 0.04; }
+}
+
+.network-bg {
+  position: fixed;
+  inset: -10%; 
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.75; /* Opacity */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Cg fill='none' stroke='%233b82f6' stroke-width='0.4' stroke-opacity='0.4'%3E%3Cpath d='M50 50 L450 150 M450 150 L250 450 M250 450 L50 50 M50 50 L300 300 M300 300 L450 150'/%3E%3Ccircle cx='50' cy='50' r='2' fill='%233b82f6'/%3E%3Ccircle cx='450' cy='150' r='2' fill='%233b82f6'/%3E%3Ccircle cx='250' cy='450' r='2' fill='%233b82f6'/%3E%3Ccircle cx='300' cy='300' r='1' fill='%233b82f6'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 800px 800px;
+  animation: cyberDrift 40s ease-in-out infinite;
+  filter: blur(0.5px);
+}
+
+/* Scanline effect */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.08) 51%,
+    transparent 51%
+  );
+  background-size: 100% 4px;
+  animation: terminalFlicker 0.15s infinite;
+}

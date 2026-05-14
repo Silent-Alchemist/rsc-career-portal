@@ -667,7 +667,7 @@ function App() {
     setPlayerHistory(prev => prev.filter((_, i) => i !== index));
   };
 
-  const downloadCard = () => {
+const downloadCard = () => {
   const node = document.getElementById('stat-card');
   
   // 1. Capture current state to revert later
@@ -676,17 +676,24 @@ function App() {
   // 2. Force a high-fidelity "Desktop" layout for the snapshot
   node.style.width = '1200px';
   node.style.height = 'auto';
-  node.style.transform = 'scale(1)'; // Ensure no zoom interference
+
+  const blurElements = node.querySelectorAll('.backdrop-blur-sm, .backdrop-blur-md');
+  blurElements.forEach(el => el.style.backdropFilter = 'none');
 
   toPng(node, { 
     filter: (n) => !n.classList?.contains('no-print'),
     cacheBust: true,
-    pixelRatio: 2, // This doubles the resolution (Retina quality)
-    backgroundColor: '#010205' // Ensures no transparent gaps
+    pixelRatio: 3, // Ultra-HD (4K quality)
+    backgroundColor: '#010205',
+    style: {
+      'image-rendering': 'crisp-edges',
+      'transform': 'scale(1)'
+    }
   })
     .then((dataUrl) => {
-      // 3. Revert to the responsive mobile style immediately
+      // REVERT STYLES
       node.style.cssText = originalStyle;
+      blurElements.forEach(el => el.style.backdropFilter = '');
       
       const link = document.createElement('a');
       link.download = `RSC-Career-${getStat(latest, 'name')}.png`;
@@ -696,6 +703,7 @@ function App() {
     .catch((err) => {
       console.error("Download failed", err);
       node.style.cssText = originalStyle;
+      blurElements.forEach(el => el.style.backdropFilter = '');
     });
 };
 
@@ -1045,11 +1053,12 @@ function App() {
                         <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 min-w-0 text-center md:text-left">
                           <div className="relative flex-shrink-0">
                             <div className="absolute inset-0 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
-                            <div className="w-24 h-24 md:w-32 md:h-32 bg-white/5 rounded-3xl md:rounded-[2.5rem] flex items-center justify-center border border-white/10 relative z-10 backdrop-blur-sm shadow-2xl">
+                            <div className="w-24 h-24 md:w-32 md:h-32 bg-[#0a0f1a] rounded-3xl md:rounded-[2.5rem] flex items-center justify-center border border-white/10 relative z-10 backdrop-blur-sm shadow-2xl">
                               <img 
                                 src={`/assets/franchises/${getStat(latest, 'franchise').split('\n').pop().trim()}.png`} 
                                 onError={(e) => e.target.src = '/assets/rsc-shield.png'} 
-                                className="w-16 h-16 md:w-24 md:h-24 object-contain" 
+                                className="w-16 h-16 md:w-24 md:h-24 object-contain"
+                                style={{ imageRendering: 'auto' }} 
                               />
                             </div>
                           </div>
@@ -1204,8 +1213,18 @@ function App() {
                         <table className="min-w-[800px] md:w-full text-left border-collapse">
                           <thead>
                             <tr className="text-slate-600 text-[10px] font-black uppercase border-b border-white/5 pb-6">
-                              <th className="pb-6">Season</th><th className="pb-6">Tier</th><th className="pb-6">Franchise</th><th className="pb-6 text-center pr-10">GP</th>
-                              <th className="pb-6">SBV</th><th className="pb-6">PPG</th><th className="pb-6">GPG</th><th className="pb-6">ShPG</th><th className="pb-6">Sh%</th><th className="pb-6">APG</th><th className="pb-6">SvPG</th><th className="pb-6 text-right">Win%</th>
+                              <th className="pb-6" title="The competitive RSC season period">Season</th>
+                              <th className="pb-6" title="The league tier level the player played in">Tier</th>
+                              <th className="pb-6" title="The organization the player represented">Franchise</th>
+                              <th className="pb-6 text-center pr-10" title="Games Played">GP</th>
+                              <th className="pb-6" title="Stats-Based Value: A composite metric of overall impact">SBV</th>
+                              <th className="pb-6" title="Points Per Game: Total score divided by games played">PPG</th>
+                              <th className="pb-6" title="Goals Per Game: Raw scoring frequency">GPG</th>
+                              <th className="pb-6" title="Shots Per Game: Offensive pressure frequency">ShPG</th>
+                              <th className="pb-6" title="Shooting Percentage: Goal conversion efficiency">Sh%</th>
+                              <th className="pb-6" title="Assists Per Game: Playmaking and support frequency">APG</th>
+                              <th className="pb-6" title="Saves Per Game: Defensive reliability frequency">SvPG</th>
+                              <th className="pb-6 text-right" title="Percentage of games won">Win%</th>
                             </tr>
                           </thead>
                           <tbody className="text-xs font-bold">
@@ -1874,6 +1893,10 @@ function App() {
                         const data = target === 'Career' ? validData : validData.filter(s => s.seasonLabel === target);
                         
                         if (data.length === 0) return 0;
+
+                        if (metric.key === 'ovr') {
+                          return calculateOVR(data);
+                        }
 
                         // WEIGHTED LOGIC: (Stat * Games) / Total Games
                         const totalGames = data.reduce((acc, s) => acc + (parseInt(getStat(s, 'gp')) || 0), 0);

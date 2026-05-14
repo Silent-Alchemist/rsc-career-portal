@@ -1,16 +1,38 @@
-# React + Vite
+# ❄️ RSC Intelligence Portal: The MyCareer Project
+### [Visit the Live Portal: rscmycareer.com](https://rscmycareer.com/)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![Status](https://img.shields.io/badge/Status-Stable-emerald)
+![Version](https://img.shields.io/badge/Version-2026.5.14-blue)
+![League](https://img.shields.io/badge/League-RSC_NA-cyan)
 
-Currently, two official plugins are available:
+The **RSC Intelligence Portal** (The RSC MyCareer Project) is a high-fidelity analytical dashboard designed for the Rocket Soccar Confederation. It serves as a central hub for scouting, performance tracking, and historical career data for thousands of Rocket League competitive players.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 The Purpose
+In a league as vast as the RSC, raw data can be overwhelming. The MyCareer Project was built to translate complex spreadsheets into an immersive, **Analytical Noir** interface. 
 
-## React Compiler
+With the launch of **v.2026.5.14: S26 Deadeye Overhaul**, the portal has been re-engineered to support the record-breaking influx of new players in Season 26, ensuring that both rookies and veterans have access to elite-level Sabermetric insights.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 💎 Core Features
+* **Weighted Career Averages:** A custom mathematical engine that calculates player performance across multiple seasons, weighting stats by Games Played (GP) to ensure historical integrity.
+* **The OVR System:** A dynamic 0-99 rating system based on tier-specific benchmarks, recognizing elite statistical dominance.
+* **Versus Mode:** Real-time benchmarking allows scouts and players to compare stats against Tier and League averages.
+* **Identity Verification (⊕):** A robust tracking system that uses RSC IDs to link player aliases and name changes across the league's history.
+* **Efficiency Tracking:** Specialized metrics including Shooting % (Sh%) and Skill-Based Value (SBV) to identify high-impact performers.
+* **Mobile-Resilient HUD:** A fully responsive interface designed for scouting on-the-go without sacrificing visual depth.
 
-## Expanding the ESLint configuration
+## 🛠️ Technical Stack
+* **Frontend:** React 18 + Vite
+* **Styling:** Tailwind CSS (Custom "Midnight" & "Royal" themes)
+* **Data Processing:** Custom weighted-average logic & RESTful data sync
+* **Animations:** Framer Motion & CSS Geometry Warp
+* **Export:** HTML-to-Canvas PNG generation for scouting reports
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ❄️ Behind the Aesthetic
+The "Analytical Noir" theme—utilizing cold blues, winter aesthetics, and geometric network drifts—is designed to treat competitive gaming with the technical seriousness of a professional sport. 
+
+> "Nothing lasts on this dirt. The seasons always change, but the data remains."
+
+---
+**Developed by iSilently**
+
+*Lead Data Analyst & Developer*

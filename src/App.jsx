@@ -56,7 +56,7 @@ const getStatStyle = (key, value, gp) => {
   };
 
   if (key === 'winPct') {
-    const p = val < 1 ? val * 100 : val;
+    const p = val <= 1 ? val * 100 : val;
     if (!applyCyan(80)) {
       if (p <= 50) color = lerpColor(RED, YELLOW, p / 50);
       else if (p <= 80) color = lerpColor(YELLOW, FULL_GREEN, (p - 50) / 30);
@@ -68,6 +68,29 @@ const getStatStyle = (key, value, gp) => {
       else if (val <= 45) color = lerpColor(RED, YELLOW, val / 45);
       else if (val <= 100) color = lerpColor(YELLOW, FULL_GREEN, (val - 45) / 55);
       else color = `rgb(${FULL_GREEN.join(',')})`;
+    }
+  } else if (key === 'shPct') {
+    // Standardize to 0-100 scale for comparison
+    const p = val <= 1 && val > 0 ? val * 100 : val;
+    
+    // Elite threshold: 60% with the games played requirement
+    if (!applyCyan(60)) {
+      if (p <= 18) {
+        // 0 - 18%: Red to Orange (using Red to Yellow lerp)
+        color = lerpColor(RED, YELLOW, p / 18);
+      } else if (p <= 29) {
+        // 19 - 29%: Deepening the Orange/Yellow
+        color = lerpColor(YELLOW, [251, 146, 60], (p - 18) / 11); 
+      } else if (p <= 39) {
+        // 30 - 39%: Transition to Yellow
+        color = lerpColor([251, 146, 60], YELLOW, (p - 29) / 10);
+      } else if (p <= 50) {
+        // 40 - 50%: Transition to Green
+        color = lerpColor(YELLOW, FULL_GREEN, (p - 39) / 11);
+      } else {
+        // 51%+: Locked in Full Green
+        color = `rgb(${FULL_GREEN.join(',')})`;
+      }
     }
   } else if (key === 'ppg') {
     if (!applyCyan(500)) {
@@ -109,7 +132,14 @@ const normalizeId = (input) => {
 const formatWinPct = (val) => {
   const num = parseFloat(val);
   if (isNaN(num)) return "0.0%";
-  const percent = num < 1 ? num * 100 : num;
+  const percent = num <= 1 ? num * 100 : num;
+  return `${percent.toFixed(1)}%`;
+};
+
+const formatShPct = (val) => {
+  const num = parseFloat(val);
+  if (isNaN(num)) return "0.0%";
+  const percent = num <= 1 ? num * 100 : num;
   return `${percent.toFixed(1)}%`;
 };
 
@@ -136,7 +166,7 @@ function App() {
   const [aliases, setAliases] = useState([]);
   const [newAlias, setNewAlias] = useState('');
   const [accolades, setAccolades] = useState([]);
-  const [accSeason, setAccSeason] = useState('S25');
+  const [accSeason, setAccSeason] = useState('S26');
   const [accTier, setAccTier] = useState('Premier');
   const [accType, setAccType] = useState('Championship');
 
@@ -181,7 +211,7 @@ function App() {
     else updatePlayer2History(matches);
   };
 
-  // Mirror your current update function for Player 2
+  // Mirrors the current update function for Player 2
   const updatePlayer2History = (newData) => {
     const uniqueData = [];
     const seenKeys = new Set();
@@ -201,23 +231,30 @@ function App() {
     const process = (history, targetSeason) => {
       if (!history || history.length === 0) return [0,0,0,0,0];
       
-      // Filter by season if "Career" isn't selected
       let source = history;
       if (targetSeason !== 'Career') {
         source = history.filter(s => s.seasonLabel === targetSeason);
       } else {
-        // Use our existing 20-game unified logic for career avg
         const unified = getUnifiedHistory(history);
         source = unified.filter(s => s.calculatedGP >= 20).length > 0 
           ? unified.filter(s => s.calculatedGP >= 20) 
           : unified;
       }
       
+      // If no data was found after filtering, return zeros to prevent crash
+      if (source.length === 0) return [0,0,0,0,0];
+
       return stats.map(key => {
         const sumPercentiles = source.reduce((acc, row) => {
           const p = getPercentileData(row, key);
-          return acc + (p.label === 'TOP' ? (100 - p.value) : p.value);
+          
+          // Check if p exists before accessing .label
+          if (!p) return acc + 0; 
+          
+          const val = (p.label === 'TOP' ? (100 - p.value) : p.value);
+          return acc + (val || 0);
         }, 0);
+        
         return sumPercentiles / source.length;
       });
     };
@@ -239,13 +276,17 @@ function App() {
 
     if (pool.length === 0) return null;
 
-    const stats = ['sbv', 'gpg', 'apg', 'svpg', 'shpg', 'winPct', 'gp'];
+    // If at least 20 people in this pool have 10+ games, we consider it "Mature"
+    const isPoolMature = pool.filter(d => (parseInt(getStat(d, 'gp')) || 0) >= 10).length >= 20;
+
+    const stats = ['sbv', 'gpg', 'apg', 'svpg', 'shpg', 'shPct', 'winPct', 'gp'];
     const avgData = {};
+
     stats.forEach(key => {
       // If it's a skill stat, filter the pool further to 10+ GP for that specific metric
-      const metricPool = (key === 'gp') 
-        ? pool 
-        : pool.filter(d => (parseInt(getStat(d, 'gp')) || 0) >= 10);
+      // 10 GP if mature, otherwise use 1 GP to avoid zeros in new seasons
+      const threshold = (isPoolMature && key !== 'gp') ? 10 : 1;
+      const metricPool = pool.filter(d => (parseInt(getStat(d, 'gp')) || 0) >= threshold);
 
       if (metricPool.length === 0) {
           avgData[key] = 0;
@@ -253,7 +294,12 @@ function App() {
       }
 
       const sum = metricPool.reduce((acc, row) => acc + (parseFloat(getStat(row, key)) || 0), 0);
+
+      // provide a league-standard fallback so the UI isn't empty.
       avgData[key] = sum / metricPool.length;
+      if (avgData[key] === 0 && (key === 'winPct' || key === 'shPct')) {
+          avgData[key] = key === 'winPct' ? 0.50 : 0.22; // Fallbacks
+      }
     });
     return avgData;
   };
@@ -273,8 +319,12 @@ function App() {
       
       const sumPercentiles = source.reduce((acc, row) => {
         const p = getPercentileData(row, key);
+
+        if (!p) return acc + 0; // Defaulting to 0 (No data)
+
         // Convert "Top 2%" to a score of 98, and "Bottom 10%" to 10
-        return acc + (p.label === 'TOP' ? (100 - p.value) : p.value);
+        const score = (p.label === 'TOP' ? (100 - p.value) : p.value);
+        return acc + (score || 0);
       }, 0);
       
       return sumPercentiles / source.length;
@@ -311,7 +361,7 @@ function App() {
       seasonsMap[s].push(row);
     });
 
-    // Sort strictly by the order in your seasonsList (Early -> Late)
+    // Sort strictly by the order in seasonsList (from: Early -> Late)
     const chartPoints = Object.keys(seasonsMap)
       .sort((a, b) => seasonsList.indexOf(b) - seasonsList.indexOf(a))
       .map(s => {
@@ -375,10 +425,16 @@ function App() {
     const tier = getStat(row, 'tier');
     const playerVal = parseFloat(getStat(row, statKey)) || 0;
 
+    // Mature league check -- check if season is mature (at least 30 people with 20-game qual season)
+    const mature = allData.filter(d => 
+      d.seasonLabel === season && 
+      parseInt(getStat(d, 'gp')) >= 20
+    ).length >= 30;
+
     const peers = allData.filter(d => 
       d.seasonLabel === season && 
       (percentileScope === 'league' || getStat(d, 'tier') === tier) &&
-      parseInt(getStat(d, 'gp')) >= 10 
+      parseInt(getStat(d, 'gp')) >= (mature ? 20 : 1)
     );
 
     if (peers.length === 0) return null;
@@ -437,19 +493,34 @@ function App() {
   };
 
   const handleSearch = () => {
-    // 1. Clean the input to see if it's ONLY digits
-    const isOnlyDigits = /^\d+$/.test(searchId.trim());
-    const isRscFormat = /^RSC\d+$/i.test(searchId.trim());
-    
-    setAliases([]); // Reset linked data on a brand new search
+    setAliases([]); 
+    const cleanInput = searchId.trim().toLowerCase();
     let matches = [];
 
-    // 2. Decide if we are searching by ID or Name
-    if (isOnlyDigits || isRscFormat) {
-      const targetId = normalizeId(searchId);
+    // 1. Determine if the initial input is an ID
+    let isOnlyDigits = /^\d+$/.test(cleanInput);
+    let isRscFormat = /^RSC\d+$/i.test(cleanInput);
+    let targetId = (isOnlyDigits || isRscFormat) ? normalizeId(cleanInput) : null;
+
+    // 2. If it's a name, find ANY instance of this name that has a valid RSC ID
+    if (!targetId) {
+      // We use .find() on a filtered list to ensure we only get a row that HAS an ID
+      const rowsWithName = allData.filter(row => getStat(row, 'name').toLowerCase() === cleanInput);
+      const rowWithValidId = rowsWithName.find(row => {
+        const id = row['RSC ID'];
+        return id && id !== '---' && id !== '';
+      });
+
+      if (rowWithValidId) {
+        targetId = normalizeId(getStat(rowWithValidId, 'id'));
+        isOnlyDigits = true; // Pivot to ID processing
+      }
+    }
+
+    // 3. Process as an ID Search (Catches all name changes)
+    if (targetId) {
       matches = allData.filter(row => getStat(row, 'id') === targetId);
       
-      // If an ID search returns results, proceed with auto-discovery
       if (matches.length > 0) {
         const discoveredNames = [...new Set(matches.map(row => getStat(row, 'name').toLowerCase()))];
         const legacyMatches = allData.filter(row => {
@@ -461,9 +532,8 @@ function App() {
       }
     }
 
-    // 3. Fallback/Direct Name Search (For names like cosmo6430)
-    // This runs if the ID search found nothing OR if the input contains letters
-    const nameMatches = allData.filter(row => getStat(row, 'name').toLowerCase() === searchId.toLowerCase());
+    // 4. Fallback: Direct Name Search (For players who NEVER had an RSC ID)
+    const nameMatches = allData.filter(row => getStat(row, 'name').toLowerCase() === cleanInput);
     updatePlayerHistory(nameMatches);
   };
 
@@ -482,7 +552,7 @@ function App() {
     if (aliases.includes(lowerAlias)) return;
 
     // Verify the name exists in the database
-    const aliasMatches = allData.filter(row => getStat(row, 'name').toLowerCase() === lowerAlias);
+    const aliasMatches = allData.filter(row => getStat(row, 'name')?.toLowerCase() === lowerAlias);
     
     if (aliasMatches.length === 0) {
       alert(`User "${newAlias}" not found in RSC database.`);
@@ -501,7 +571,7 @@ function App() {
     newData.forEach(row => {
       // Create a unique fingerprint: Season + Name + GP
       // This prevents the same player-season entry from appearing twice
-      const fingerprint = `${row.seasonLabel}-${getStat(row, 'name')}-${getStat(row, 'gp')}`;
+      const fingerprint = `${row.seasonLabel}-${getStat(row, 'name')?.toLowerCase()}-${getStat(row, 'gp')}`;
       
       if (!seenKeys.has(fingerprint)) {
         uniqueData.push(row);
@@ -509,7 +579,7 @@ function App() {
       }
     });
 
-    // Sort by season using your existing seasonsList order
+    // Sort by season using existing seasonsList order
     const sorted = uniqueData.sort((a, b) => 
       seasonsList.indexOf(a.seasonLabel) - seasonsList.indexOf(b.seasonLabel)
     );
@@ -642,6 +712,22 @@ function App() {
         ? 'bg-[#03050a] text-slate-200' 
         : 'bg-[#0a1931] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1e3a8a]/20 via-[#0a1931] to-[#020617] text-blue-100'
     }`}>
+
+      {/* --- TECH GRID BACKGROUND LAYERS --- */}
+      <div className="tech-bg-overlay no-print">
+         <div className="dots-pattern" />
+
+         {/* --- HIGH-TECH GEOMETRY NETWORK --- */}
+        <div className="network-bg no-print" />
+        <div className="scanlines no-print" />
+        
+        {/* --- SITE PULSES --- */}
+        <div className="tech-lines-container no-print">
+          <div className="circuit-line" style={{ left: '20%', animationDelay: '1s' }} />
+          <div className="circuit-line" style={{ left: '70%', animationDelay: '5s' }} />
+        </div>
+      </div>
+
       {/* --- UNIFIED BRANDED HEADER --- */}
       <header className="relative w-full px-4 md:px-12 py-6 md:py-10 no-print flex flex-col items-center gap-6">
         <div className="w-full flex flex-row items-center justify-between">
@@ -778,6 +864,11 @@ function App() {
                 >
                   New Search
                 </button>
+
+                <button onClick={downloadCard} className="w-full mt-3 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white py-3 rounded-xl font-bold uppercase text-[10px] tracking-[0.2em] transition-all border border-white/10 cursor-pointer flex items-center justify-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                  Export as PNG
+                </button>
               </div>
 
               <div className={`p-6 rounded-3xl shadow-xl transition-all border ${theme === 'royal' ? 'bg-black/40 border-white/10' : 'bg-slate-900 border-white/5'}`}>
@@ -854,7 +945,6 @@ function App() {
                       ))}
                     </optgroup>
                   </select>
-                  <button onClick={downloadCard} className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all cursor-pointer">Download PNG</button>
                 </div>
               </div>
 
@@ -892,29 +982,37 @@ function App() {
                     <text x="-5" y="35" textAnchor="end" fontSize="6" fill="white" opacity="0.8" fontWeight="bold">WIN</text>
 
                     {/* The Data Polygon */}
-                    {getRadarData() && (
-                      <polygon
-                        points={getRadarData().map((val, i) => {
-                          const angle = (i * 72 - 90) * (Math.PI / 180);
-                          const r = (val / 100) * 50;
-                          return `${50 + r * Math.cos(angle)},${50 + r * Math.sin(angle)}`;
-                        }).join(' ')}
-                        fill="rgba(59, 130, 246, 0.2)"
-                        stroke="#3b82f6"
-                        strokeWidth="1.5"
-                      />
-                    )}
+                    {getRadarData() && (() => {
+                      // 1. Use 'latest' -- season
+                      // 2. Use 'getStat' to find the GP of that latest season -- note to self
+                      const activeGP = latest ? (parseInt(getStat(latest, 'gp')) || 0) : 0;
+                      const isQualified = activeGP >= 20;
+
+                      return (
+                        <polygon
+                          points={getRadarData().map((val, i) => {
+                            const angle = (i * 72 - 90) * (Math.PI / 180);
+                            const r = (val / 100) * 50;
+                            return `${50 + r * Math.cos(angle)},${50 + r * Math.sin(angle)}`;
+                          }).join(' ')}
+                          fill={isQualified ? "rgba(59, 130, 246, 0.2)" : "rgba(148, 163, 184, 0.1)"}
+                          stroke={isQualified ? "#3b82f6" : "#94a3b8"}
+                          strokeWidth="1.5"
+                          strokeDasharray={isQualified ? "0" : "3,3"} 
+                        />
+                      );
+                    })()}
                   </svg>
                 </div>
               </div>
             </aside>
 
-            <section className={`transition-all duration-700 ${isExpanded ? 'col-span-1' : 'lg:col-span-3'}`}>
+            <section className={`transition-all duration-700 w-full ${isExpanded ? 'md:col-span-1' : 'md:lg:col-span-3'}`}>
               <div className="relative">
                 <div className={`
                   absolute -top-[3px] -right-[3px] w-56 h-56 
                   rounded-tr-[3.5rem] transition-all duration-500 opacity-0 
-                  ${isExpanded ? '' : 'group-hover/expand:opacity-100'} 
+                  ${isExpanded ? '' : 'md:group-hover/expand:opacity-100'} 
                   pointer-events-none z-0 
                   /* Sharp Arc Line */
                   border-t-[2.5px] border-r-[2.5px] border-blue-400
@@ -926,15 +1024,17 @@ function App() {
                 `} />
 
                 <div id="stat-card" className="relative z-10 bg-[#010205] border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl relative">
-                  <div className="absolute top-0 right-0 w-24 h-24 group/expand z-50 no-print">
+                  <div className="absolute top-0 right-0 w-24 h-24 group/expand z-50 no-print hidden md:block">
                     
                     <button 
                       onClick={() => setIsExpanded(!isExpanded)}
                       className="absolute top-5 right-5 text-slate-500 hover:text-blue-400 transition-colors p-2"
                     >
                       {isExpanded ? (
+                        /* Collapse SVG */
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 15 6 6m-6-6v6m0-6h6M9 9 3 3m6 6V3m0 6H3"/></svg>
                       ) : (
+                        /* Expand SVG */
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 9 6-6m-6 6V3m0 6h6M9 15l-6 6m6-6v6m0-6H3"/></svg>
                       )}
                     </button>
@@ -956,10 +1056,10 @@ function App() {
                           <div className="min-w-0">
                             <p className="font-black text-[16px] uppercase tracking-[0.6em] mb-2 truncate" style={{color: getTierColor(getStat(latest, 'tier'))}}>{getStat(latest, 'tier').split('\n').pop()}</p>
                             <h2 
-                              className="font-black italic uppercase tracking-tighter leading-none mb-3 whitespace-nowrap text-4xl sm:text-5xl md:text-7xl"
+                              className="font-black italic uppercase tracking-tighter leading-none mb-3 text-4xl sm:text-5xl md:text-7xl"
                               style={{ 
                                 fontSize: getStat(latest, 'name').length > 10 
-                                  ? `clamp(32px, 8vw, 72px)` // Use clamp to prevent it from ever getting too big/small
+                                  ? `clamp(24px, 8vw, 52px)` // Use clamp to prevent it from ever getting too big/small
                                   : '' 
                               }}
                             >
@@ -1105,7 +1205,7 @@ function App() {
                           <thead>
                             <tr className="text-slate-600 text-[10px] font-black uppercase border-b border-white/5 pb-6">
                               <th className="pb-6">Season</th><th className="pb-6">Tier</th><th className="pb-6">Franchise</th><th className="pb-6 text-center pr-10">GP</th>
-                              <th className="pb-6">SBV</th><th className="pb-6">PPG</th><th className="pb-6">GPG</th><th className="pb-6">ShPG</th><th className="pb-6">APG</th><th className="pb-6">SvPG</th><th className="pb-6 text-right">Win%</th>
+                              <th className="pb-6">SBV</th><th className="pb-6">PPG</th><th className="pb-6">GPG</th><th className="pb-6">ShPG</th><th className="pb-6">Sh%</th><th className="pb-6">APG</th><th className="pb-6">SvPG</th><th className="pb-6 text-right">Win%</th>
                             </tr>
                           </thead>
                           <tbody className="text-xs font-bold">
@@ -1118,9 +1218,67 @@ function App() {
                                   <td className="py-6 text-blue-500 italic font-black pl-2">
                                     <div className="grid grid-cols-[15px_1fr] items-center gap-1">
                                       <div className="flex justify-start">
-                                        {(!row['RSC ID'] || row['RSC ID'] === '---') && (
-                                          <span className="text-emerald-500 text-[10px]">⊕</span>
-                                        )}
+                                        {(() => {
+                                          const rawId = row['RSC ID']; 
+                                          const rowId = getStat(row, 'id');
+                                          const rowName = getStat(row, 'name').toLowerCase();
+                                          
+                                          // Identity anchors from the current search/profile
+                                          const masterId = latest ? getStat(latest, 'id') : null;
+                                          const masterName = latest ? getStat(latest, 'name').toLowerCase() : '';
+                                          const cleanSearch = searchId.trim().toLowerCase();
+
+                                          // Checks row for valid ID entry
+                                          const hasRealRowId = rowId && rowId !== '---' && rowId !== '';
+                                          const hasRealMasterId = masterId && masterId !== '---' && masterId !== '';
+
+                                          // SCENARIO C: MANUAL VETERAN LINK
+                                          const isManualLink = aliases.some(a => a.toLowerCase() === rowName);
+
+                                          // SCENARIO A: HARD MISMATCH (Yellow Warning Logic)
+                                          // Trigger warning if: 1. It's a manual link with a different ID, OR 2. It's an auto-result with a different ID
+                                          const isManualConflict = isManualLink && hasRealRowId && hasRealMasterId && rowId !== masterId;
+                                          const isAutoMismatch = !isManualLink && rowName === cleanSearch && hasRealRowId && hasRealMasterId && rowId !== masterId;
+                                          const isConflict = isManualConflict || isAutoMismatch;
+
+                                          // SCENARIO B: NAME CHANGE (Emerald ⊕)
+                                          const isNameChange = hasRealMasterId && rowId === masterId && rowName !== masterName;
+                                          
+                                          // SCENARIO D: GHOST MATCH (Emerald ⊕)
+                                          const isGhostMatch = rowName === masterName && !hasRealRowId;
+
+                                          // --- RENDERING PRIORITY ---
+
+                                          // Priority 1: Yellow Warning (ID Mismatches)
+                                          if (isConflict) {
+                                            return (
+                                              <span 
+                                                className="text-yellow-500 text-[12px] animate-pulse cursor-help" 
+                                                title={isManualConflict 
+                                                  ? `Warning: Manual link "${getStat(row, 'name')}" belongs to a different RSC ID than the profile.` 
+                                                  : "Warning: ID mismatch. This player shares a name with your search but has a different ID."}
+                                              >
+                                                ⚠
+                                              </span>
+                                            );
+                                          }
+
+                                          // Priority 2: Verified Connections (The Green Light)
+                                          if (isManualLink || isNameChange || isGhostMatch) {
+                                            let tooltip = "Linked Row";
+                                            if (isManualLink) tooltip = `Veteran Link: Manually linked via alias "${getStat(row, 'name')}"`;
+                                            else if (isNameChange) tooltip = "Verified Identity: Name change detected via RSC ID";
+                                            else if (isGhostMatch) tooltip = "Legacy Link: Verified via name match (No ID available)";
+
+                                            return (
+                                              <span className="text-emerald-500 text-[10px] cursor-help" title={tooltip}>
+                                                ⊕
+                                              </span>
+                                            );
+                                          }
+
+                                          return null;
+                                        })()}
                                       </div>
                                       <span className="text-sm">{row.seasonLabel}</span>
                                     </div>
@@ -1130,12 +1288,15 @@ function App() {
                                   <td className="py-6 text-center font-mono opacity-40 pr-10">{gp}</td>
 
                                   {/* REPLACEMENT FOR RENDERCELL: Dynamic Stat Mapping */}
-                                  {['sbv', 'ppg', 'gpg', 'shpg', 'apg', 'svpg'].map(key => {
+                                  {['sbv', 'ppg', 'gpg', 'shpg', 'shPct', 'apg', 'svpg'].map(key => {
                                       const val = getStat(row, key);
                                       const pData = getPercentileData(row, key);
+
+                                      const displayValue = key === 'shPct' ? formatShPct(val) : val;
+
                                       return (
                                         <td key={key} className="py-6 font-mono group/stat relative" style={getStatStyle(key, val, gp)}>
-                                          <span className="cursor-default text-[13px] font-bold tracking-tight">{val}</span>
+                                          <span className="cursor-default text-[13px] font-bold tracking-tight">{displayValue}</span>
                                           {pData && (
                                             <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-4 py-2 rounded-lg text-[12px] font-black uppercase italic tracking-tighter opacity-0 group-hover/stat:opacity-100 transition-all transform group-hover/stat:-translate-y-2 pointer-events-none whitespace-nowrap z-50 shadow-2xl border-2 ${pData.isElite ? "bg-yellow-500 text-black border-yellow-300 animate-gold-glow shadow-[0_0_25px_rgba(250,204,21,0.7)]" : "bg-blue-600 text-white border-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.4)]"}`}>
                                               {pData.isNumberOne ? <span className="flex items-center gap-1">👑 #1 IN {percentileScope.toUpperCase()}</span> : `${pData.label} ${pData.value}%`}
@@ -1160,6 +1321,49 @@ function App() {
                                 </tr>
                               );
                             })}
+
+                            {/* --- CAREER SUMMARY (WEIGHTED AVERAGE) ROW --- */}
+                            {playerHistory.length > 0 && (() => {
+                              const validHistory = playerHistory.filter(row => (parseInt(getStat(row, 'gp')) || 0) > 0);
+                              const totalGP = validHistory.reduce((acc, row) => acc + (parseInt(getStat(row, 'gp')) || 0), 0);
+                              
+                              if (totalGP === 0) return null;
+
+                              // To calculate weighted average for a specific key
+                              const getWeightedAvg = (key) => {
+                                const weightedSum = validHistory.reduce((acc, row) => {
+                                  const stat = parseFloat(getStat(row, key)) || 0;
+                                  const gp = parseInt(getStat(row, 'gp')) || 0;
+                                  return acc + (stat * gp);
+                                }, 0);
+                                return weightedSum / totalGP;
+                              };
+
+                              return (
+                                <tr className="border-t-2 border-blue-500/30 bg-blue-500/5 font-black italic">
+                                  <td className="py-6 pl-2 text-blue-400 uppercase tracking-tighter">CAREER</td>
+                                  <td className="py-6 text-[10px] text-slate-500"></td>
+                                  <td className="py-6 text-[10px] text-slate-500">WEIGHTED AVERAGE</td>
+                                  <td className="py-6 text-center pr-10 text-white opacity-100">{totalGP}</td>
+                                  
+                                  {['sbv', 'ppg', 'gpg', 'shpg', 'shPct', 'apg', 'svpg'].map(key => {
+                                    const avgVal = getWeightedAvg(key);
+                                    const style = getStatStyle(key, avgVal, totalGP);
+                                    const displayValue = key === 'shPct' ? formatShPct(avgVal) : avgVal.toFixed(2);
+                                    
+                                    return (
+                                      <td key={key} className="py-6 font-mono" style={style}>
+                                        <span className="text-[13px]">{displayValue}</span>
+                                      </td>
+                                    );
+                                  })}
+
+                                  <td className="py-6 text-right font-mono pr-2" style={getStatStyle('winPct', getWeightedAvg('winPct'), totalGP)}>
+                                    {formatWinPct(getWeightedAvg('winPct'))}
+                                  </td>
+                                </tr>
+                              );
+                            })()}
                           </tbody>
                         </table>
                       </div>
@@ -1572,6 +1776,22 @@ function App() {
                     {/* DATA POLYGONS */}
                     {(() => {
                       const radar = getVersusRadarData(playerHistory, player2History);
+
+                      // Helper to determine if a player's current view is "Qualified"
+                      const getIsQualified = (history, targetSeason) => {
+                        if (!history || history.length === 0) return false;
+                        if (targetSeason === 'Career') {
+                          // For career, check if they have at least one season with 20+ games
+                          return getUnifiedHistory(history).some(s => (parseInt(getStat(s, 'gp')) || 0) >= 20);
+                        }
+                        // For specific seasons, find that season and check its GP
+                        const seasonRow = history.find(s => s.seasonLabel === targetSeason);
+                        return (parseInt(getStat(seasonRow || {}, 'gp')) || 0) >= 20;
+                      };
+
+                      const p1Qualified = getIsQualified(playerHistory, p1TargetSeason);
+                      const p2Qualified = getIsQualified(player2History, p2TargetSeason);
+
                       return (
                         <>
                           {/* Player 1 (Blue) */}
@@ -1581,9 +1801,10 @@ function App() {
                               const r = (val / 100) * 50;
                               return `${50 + r * Math.cos(angle)},${50 + r * Math.sin(angle)}`;
                             }).join(' ')}
-                            fill="rgba(59, 130, 246, 0.2)"
-                            stroke="#3b82f6"
-                            strokeWidth="1.5"
+                            fill={p1Qualified ? "rgba(59, 130, 246, 0.2)" : "rgba(148, 163, 184, 0.1)"}
+                            stroke={p1Qualified ? "#3b82f6" : "#94a3b8"}
+                            strokeWidth="1"
+                            strokeDasharray={p1Qualified ? "0" : "2,2"}
                             className="transition-all duration-1000"
                           />
                           {/* Player 2 (Red) */}
@@ -1593,9 +1814,10 @@ function App() {
                               const r = (val / 100) * 50;
                               return `${50 + r * Math.cos(angle)},${50 + r * Math.sin(angle)}`;
                             }).join(' ')}
-                            fill="rgba(239, 68, 68, 0.2)"
-                            stroke="#ef4444"
-                            strokeWidth="1.5"
+                            fill={p2Qualified ? "rgba(239, 68, 68, 0.2)" : "rgba(184, 148, 148, 0.1)"}
+                            stroke={p2Qualified ? "#ef4444" : "#b89494"}
+                            strokeWidth="1"
+                            strokeDasharray={p2Qualified ? "0" : "2,2"}
                             className="transition-all duration-1000"
                           />
                         </>
@@ -1635,6 +1857,7 @@ function App() {
                       { label: 'Assists PG (APG)', key: 'apg' },
                       { label: 'Saves PG (SvPG)', key: 'svpg' },
                       { label: 'Pressure PG (ShPG)', key: 'shpg' },
+                      { label: 'Shooting %', key: 'shPct', isPct: true },
                       { label: 'Win Rate', key: 'winPct', isPct: true }
                     ].map((metric, i) => {
                       const p1Row = p1TargetSeason === 'Career' ? playerHistory[0] : playerHistory.find(s => s.seasonLabel === p1TargetSeason);
@@ -1646,36 +1869,55 @@ function App() {
 
                       const getVal = (hist, target) => {
                         if (hist.length === 0) return 0;
-                        if (metric.key === 'ovr') {
-                          return target === 'Career' ? calculateOVR(hist) : calculateOVR([hist.find(s => s.seasonLabel === target) || hist[0]]);
-                        }
+                        
                         const validData = hist.filter(s => (parseInt(getStat(s, 'gp')) || 0) > 0);
-                        const data = target === 'Career' ? getUnifiedHistory(validData) : validData.filter(s => s.seasonLabel === target);
+                        const data = target === 'Career' ? validData : validData.filter(s => s.seasonLabel === target);
+                        
                         if (data.length === 0) return 0;
-                        return data.reduce((acc, s) => acc + (parseFloat(getStat(s, metric.key)) || 0), 0) / data.length;
+
+                        // WEIGHTED LOGIC: (Stat * Games) / Total Games
+                        const totalGames = data.reduce((acc, s) => acc + (parseInt(getStat(s, 'gp')) || 0), 0);
+                        const weightedSum = data.reduce((acc, s) => {
+                          const stat = parseFloat(getStat(s, metric.key)) || 0;
+                          const games = parseInt(getStat(s, 'gp')) || 0;
+                          return acc + (stat * games);
+                        }, 0);
+
+                        return totalGames > 0 ? weightedSum / totalGames : 0;
                       };
 
                       const v1 = getVal(playerHistory, p1TargetSeason);
                       const v2 = getVal(player2History, p2TargetSeason);
 
                       const renderCell = (val, colorClass, isP1) => {
-                        if (val === undefined || val === null || val === 0) return <td className="p-6 text-center text-slate-700">-</td>;
+                        if (val === undefined || val === null) return <td className="p-6 text-center text-slate-700">-</td>;
                         
                         const otherVal = isP1 ? v2 : v1;
                         const roundedVal = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(val) : val;
                         const roundedRef = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal;
+
                         const diff = roundedVal - roundedRef;
+                        const percentDiff = refVal > 0 ? (diff / refVal) : 0;
+
                         let finalColor = 'text-slate-500';
                         
                         if (showAverage) {
-                          if (val >= refVal) finalColor = colorClass;
+                          // If we are comparing to the Reference Average
+                          if (percentDiff > 0.40) {
+                            finalColor = 'text-cyan-400 animate-pulse font-black'; // +40% over avg (Elite)
+                          } else if (val >= refVal) {
+                            finalColor = colorClass; // Better than avg (Blue/Red)
+                          } else if (percentDiff < -0.40) {
+                            finalColor = 'text-red-500 opacity-40'; // -40% below avg (Struggling)
+                          }
                         } else {
-                          if (val >= otherVal) finalColor = colorClass;
+                          // If comparing P1 vs P2 directly
+                          if (val > otherVal) finalColor = colorClass;
                         }
 
                         const indicator = diff > 0.01 ? <span className="text-emerald-500 ml-2">▲</span> : 
                                         diff < -0.01 ? <span className="text-red-500 ml-2">▼</span> : 
-                                        <span className="text-slate-600 ml-2">---</span>;
+                                        <span className="text-slate-600 ml-2 font-extrabold">~</span>;
 
                         let display;
                         if (metric.key === 'ovr' || metric.key === 'gp') {
@@ -1685,7 +1927,11 @@ function App() {
                             const pData = contextRow ? getPercentileData(contextRow, metric.key) : null;
                             
                             // NEW: Show raw stat in parentheses next to the Rank
-                            const rawVal = metric.isPct ? formatWinPct(val) : val.toFixed(2);
+                            let rawVal;
+                            if (metric.key === 'shPct') rawVal = formatShPct(val);
+                            else if (metric.isPct) rawVal = formatWinPct(val);
+                            else rawVal = val.toFixed(2);
+
                             display = pData ? (
                               <div className="flex flex-col items-center">
                                 <span className="text-[10px] opacity-40 font-black mb-1">{rawVal}</span>
@@ -1693,7 +1939,8 @@ function App() {
                               </div>
                             ) : rawVal;
                         } else {
-                            display = metric.isPct ? formatWinPct(val) : val.toFixed(2);
+                            if (metric.key === 'shPct') display = formatShPct(val);
+                            else display = metric.isPct ? formatWinPct(val) : val.toFixed(2);
                         }
 
                         return (
@@ -1712,7 +1959,10 @@ function App() {
                           {renderCell(v1, 'text-blue-400', true)}
                           {showAverage && (
                             <td className="p-6 text-center font-mono opacity-30 border-x border-white/5">
-                              {metric.isPct ? formatWinPct(refVal) : (metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal.toFixed(2))}
+                              {/* Check for shPct specifically */}
+                              {metric.key === 'shPct' ? formatShPct(refVal) : 
+                              metric.isPct ? formatWinPct(refVal) : 
+                              (metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal.toFixed(2))}
                             </td>
                           )}
                           {renderCell(v2, 'text-red-400', false)}
@@ -1728,7 +1978,7 @@ function App() {
         )}
 
         {activeTab === 'about' && (
-          <div className="col-span-4 max-w-4xl mx-auto space-y-12 py-10 px-4 md:px-0 animate-in fade-in duration-700">
+          <div className="w-full col-span-4 max-w-4xl mx-auto space-y-8 md:space-y-12 py-6 md:py-10 px-2 sm:px-4 md:px-0 animate-in fade-in duration-700 box-border overflow-x-hidden">
             
             {/* --- CREDITS SECTION --- */}
             <section className="text-center bg-blue-500/5 border border-blue-500/20 p-6 md:p-10 rounded-2xl md:rounded-[3rem] shadow-2xl relative overflow-hidden overflow-x-auto ghost-scroll">
@@ -1750,7 +2000,6 @@ function App() {
 
             {/* --- THE OVR ENGINE --- */}
             <section className="w-full overflow-x-auto ghost-scroll">
-              <div className="min-w-[380px] md:min-w-full">
                 <h2 className="text-3xl font-black italic uppercase text-blue-500 mb-6">The OVR Engine</h2>
                 <p className="text-slate-400 leading-relaxed text-sm md:text-base">
                   The Career OVR is a weighted measurement of a player's performance across their <span className="font-bold">top 3 qualified seasons</span>. 
@@ -1758,7 +2007,6 @@ function App() {
                   To reach the elusive <span className="text-white font-black italic [text-shadow:_0_0_20px_#fbbf24,_0_0_40px_#f59e0b] inline-block">99 OVR</span>, a player must maintain statistical 
                   dominance in elite tiers over a sustained period.
                 </p>
-              </div>
             </section>
 
             {/* --- SEASON QUALIFICATION LOGIC --- */}
@@ -1816,7 +2064,7 @@ function App() {
 
             {/* --- METRIC DEFINITIONS --- */}
             <div className="w-full overflow-x-auto ghost-scroll pb-4">
-              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 min-w-[600px] md:min-w-full">
+              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full">
                 <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5">
                   <h3 className="text-cyan-400 font-black uppercase text-xs mb-3 tracking-widest">SBV (Skill-Based Value)</h3>
                   <p className="text-[12px] text-slate-500 leading-relaxed italic">
@@ -1898,15 +2146,15 @@ function App() {
                   {/* Profile Picture with Icy Ring */}
                   <div className="relative group">
                     <div className="absolute inset-0 bg-cyan-400 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                    <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-tr from-cyan-500 via-blue-500 to-transparent relative z-10 shadow-2xl overflow-hidden">
-                      <img 
-                        src="/assets/dev-pfp.png" 
-                        alt="iSilently" 
-                        alt="Silent" 
-                        className="w-full h-full object-cover rounded-full relative z-10"
-                        onError={(e) => e.target.src = '/assets/rsc-shield.png'} 
-                      />
-                    </div>
+                      <div className="w-40 h-40 rounded-full p-1 bg-gradient-to-tr from-cyan-500 via-blue-500 to-transparent relative z-10 shadow-2xl overflow-hidden">
+                        <img 
+                          src="/assets/dev-pfp.png" 
+                          alt="iSilently" 
+                          alt="Silent" 
+                          className="w-full h-full object-cover rounded-full relative z-10"
+                          onError={(e) => e.target.src = '/assets/rsc-shield.png'} 
+                        />
+                      </div>
                     <div 
                       className="absolute inset-0 rounded-full pointer-events-none opacity-60 mix-blend-screen z-20"
                       style={{ 
@@ -1940,8 +2188,8 @@ function App() {
                       cold aesthetics, art, strategic gameplay, and pushing the limits of my potential.
                     </p>
 
-                    {/* Icy Social Links */}
-                    <div className="flex justify-center md:justify-start gap-4 pt-4">
+                    {/* Ebig Icy Social Links ;p */}
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center md:justify-start gap-3 pt-4">
                       {[
                         { label: 'My Page', url: 'https://guns.lol/i.silent' },
                         { label: 'Instagram', url: 'https://www.instagram.com/i.silently' },
@@ -1952,7 +2200,7 @@ function App() {
                           key={social.label}
                           href={social.url} 
                           target="_blank"
-                          className="bg-cyan-500/5 hover:bg-blue-500/20 border border-sky-500/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase text-sky-400 transition-all hover:-translate-y-1 shadow-[0_4px_12px_rgba(6,182,212,0.1)]"
+                          className="bg-cyan-500/5 hover:bg-blue-500/20 border border-sky-500/20 px-2 py-3 rounded-xl text-[9px] md:text-[10px] font-black uppercase text-sky-400 transition-all hover:-translate-y-1 shadow-[0_4px_12px_rgba(6,182,212,0.1)] text-center break-all flex items-center justify-center min-h-[44px]"
                         >
                           {social.label}
                         </a>
@@ -1962,16 +2210,79 @@ function App() {
                 </div>
               </div>
             </section>
+
+            {/* --- LATEST UPDATE LOG: v.2026.5.14 --- */}
+            <section className="mt-12 mb-20 animate-in slide-in-from-bottom-8 duration-1000">
+              <div className={`p-6 md:p-10 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
+                
+                {/* Header with Version Badge */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h3 className="text-[11px] font-black uppercase text-yellow-500 mb-2 tracking-[0.3em]">System Intelligence Update</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="px-3 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px] font-black text-blue-400">
+                        v.2026.5.14
+                      </div>
+                      <span className="text-white font-black italic uppercase tracking-tighter text-xl">S26 Deadeye Overhaul</span>
+                    </div>
+                    <p className="text-[12px] text-sky-300 mt-2 italic max-w-md">
+                      Welcoming the Next Generation of RSC! A massive system overhaul designed for the veterans of the past and the rookies of Season 26.
+                    </p>
+                  </div>
+                  <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest md:text-right">
+                    Released: May 14, 2026 <br className="hidden md:block" /> Status: Stable Deployment
+                  </div>
+                </div>
+
+                {/* The Changelog Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black text-cyan-400 uppercase tracking-widest border-b border-white/5 pb-2">Analytical Upgrades</h4>
+                    <ul className="space-y-3 text-[12px] text-slate-400 font-medium leading-relaxed italic">
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Integrated S26 Mid-Season Intelligence sheets.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> New Shooting % (Sh%) tracking on all Player Cards.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Implemented Weighted Career Average math for profile integrity.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Added Tier/League Average dynamic benchmarking in Versus mode.</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black text-blue-500 uppercase tracking-widest border-b border-white/5 pb-2">Interface & Logic</h4>
+                    <ul className="space-y-3 text-[12px] text-slate-400 font-medium leading-relaxed italic">
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Deploying Cyberspace Network background with terminal flicker.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> New Identity Verification symbols (⊕) for name-change tracking.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Optimized Mobile UX: Auto-stacking cards & fixed cutoffs.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Resolved ID mismatch bugs in Legacy Season 09/10 data.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Bottom CTA for full technical log */}
+                <div className="mt-10 pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest italic">
+                    * Career OVR recalibrated for current tier standards.
+                  </p>
+                  <a 
+                    href="https://github.com/Silent-Alchemist/rsc-career-portal/releases/tag/v2026.5.14" 
+                    target="_blank" 
+                    className="text-[10px] font-black text-slate-400 hover:text-white transition-all uppercase tracking-[0.3em] flex items-center gap-2 group"
+                  >
+                    View Full Technical Log 
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </a>
+                </div>
+              </div>
+            </section>
           </div>
         )}
         
       </main>
 
       {/* --- INSERT VERSION STAPLE HERE --- */}
-      {/* --- v.YYYY.MM.version --- */}
+      {/* --- v.YYYY.MM.D --- */}
       <div className="fixed bottom-4 right-6 no-print pointer-events-none z-[100]">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 opacity-30">
-          v.2026.5.1
+          v.2026.5.14
         </p>
       </div>
 

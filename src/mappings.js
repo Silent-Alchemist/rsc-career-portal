@@ -1,6 +1,6 @@
 export const statMap = {
   name: ['Player Name', 'Name'],
-  id: ['RSC ID'],
+  id: ['RSC ID', 'RSC Id'],
   tier: ['Tier'],
   franchise: ['Franchise(s)'],
   team: ['Team(s)'],
@@ -14,6 +14,7 @@ export const statMap = {
   apg: ['APG', 'A/G', 'A/A', 'Assists Per Game'],
   svpg: ['SvPG', 'Sv/G', 'Sv/A', 'Saves Per Game'],
   shpg: ['ShPG', 'S/G', 'S/A', 'Shots Per Game'],
+  shPct: ['Sh%', 'S%'],
 };
 
 export const getStat = (row, statKey) => {

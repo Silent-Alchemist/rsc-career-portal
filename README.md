@@ -2,7 +2,7 @@
 ### [Visit the Live Portal: rscmycareer.com](https://rscmycareer.com/)
 
 ![Status](https://img.shields.io/badge/Status-Stable-emerald)
-![Version](https://img.shields.io/badge/Version-2026.5.14-blue)
+![Version](https://img.shields.io/badge/Version-2026.5.19-blue)
 ![League](https://img.shields.io/badge/League-RSC_NA-cyan)
 
 The **RSC Intelligence Portal** (The RSC MyCareer Project) is a high-fidelity analytical dashboard designed for the Rocket Soccar Confederation. It serves as a central hub for scouting, performance tracking, and historical career data for thousands of Rocket League competitive players.

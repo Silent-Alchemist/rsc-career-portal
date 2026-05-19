@@ -2657,7 +2657,7 @@ const downloadCard = () => {
       {/* --- v.YYYY.MM.D --- */}
       <div className="fixed bottom-4 right-6 no-print pointer-events-none z-[100]">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 opacity-30">
-          v.2026.5.14
+          v.2026.5.19
         </p>
       </div>
 

@@ -8,21 +8,222 @@ import { getStat } from './mappings';
 // --- 1. HELPERS: COLORS, GRADIENTS, & TIER LOGIC ---
 
 const rlCars = [
-  "007's Aston Martin DB5", "007's Aston Martin DBS", "007's Aston Martin Valhalla", "1966 Cadillac DeVille",
-  "89 Batmobile", "Ace", "Admiral", "Aftershock", "Animus GP", "Apex", "Armadillo", "Artemis", "Azura",
-  "Backfire", "Batmobile (1989)", "Batmobile (2016)", "Batmobile (2022)", "Battle Bus", "Behemoth", "Beskar",
-  "BMW 1 Series", "BMW M2 Racing", "BMW M240i", "BMW M3 (E30)", "BMW M4 GT3 EVO", "Bone Shaker", "Breakout",
-  "Breakout Type-S", "Bugatti Centodieci", "Bumblebee", "Centio", "Chikara", "Chrysler Pacifica", "Cyclone", "DeLorean Time Machine",
-  "Diestro", "Dingo", "Dominus", "Dominus GT", "Ecto-1", "Emperor", "Endo", "Esper", "Fast & Furious Dodge Charger",
-  "Fast & Furious Mazda RX-7", "Fast & Furious Nissan Skyline", "Fennec", "Ferrari 296 GTB", "Ford Bronco Raptor",
-  "Ford F-150 RLE", "Ford Mustang GTD", "Formula 1 2022", "Gizmo", "Grog", "Harbinger", "Honda Civic Type R",
-  "Hotshot", "Ice Charger", "Imperator DT5", "Insidio", "Jackal", "Jeep Wrangler", "Jäger 619", "K.I.T.T.",
-  "Komodo", "Lamborghini Countach", "Lamborghini Huracán", "Lightning McQueen", "Lockjaw", "Maestro",
-  "Mamba", "Mantis", "Marauder", "Masamune", "Maverick", "McLaren 570S", "McLaren Senna", "Merc",
-  "Mudcat", "NASCAR Chevrolet Camaro", "Nemesis", "Nimbus", "Nissan Fairlady Z", "Nissan Silvia",
-  "Nomad", "Octane", "Octane ZSR", "Outlaw", "Paladin", "Peregrine TT", "Porsche 911 Turbo", "Proteus",
-  "R3MX", "Road Hog", "Road Hog XL", "Samurai", "Scarab", "Sentinel", "Sweet Tooth", "Takumi", "Takumi RX-T",
-  "Tesla Cybertruck", "Triton", "Twinzer", "Tygris", "Venom", "Volkswagen Golf GTI", "Vulcan", "X-Devil", "Zippy"
+  "007's Aston Martin DB5",
+  "007's Aston Martin DBS",
+  "007's Aston Martin Valhalla",
+  "1966 Cadillac DeVille",
+  "1999 Nissan Skyline GT-R R34",
+  "89 Batmobile",
+  "Ace",
+  "Admiral",
+  "Aftershock",
+  "Animus GP",
+  "Apex",
+  "Armadillo",
+  "Artemis",
+  "Artemis G1",
+  "Artemis GXT",
+  "Azura",
+  "Back to the Future Time Machine",
+  "Backfire",
+  "Batmobile (1989)",
+  "Batmobile (2016)",
+  "Batmobile (2022)",
+  "Battle Bus",
+  "Behemoth",
+  "Beskar",
+  "BMW 1 Series",
+  "BMW 1 Series RLE",
+  "BMW M2 Racing",
+  "BMW M240i",
+  "BMW M3 (E30)",
+  "BMW M4 GT3 EVO",
+  "Bone Shaker",
+  "Breakout",
+  "Breakout Type-S",
+  "Breakout X",
+  "Bugatti Centodieci",
+  "Bumblebee",
+  "Centio",
+  "Chikara",
+  "Chikara G1",
+  "Chikara GXT",
+  "Chevrolet Astro",
+  "Chevrolet Corvette Stingray",
+  "Chevrolet Corvette ZR1",
+  "Chrysler Pacifica",
+  "Corlay",
+  "Cyclone",
+  "Dark Knight's Tumbler",
+  "Defender D7X-R",
+  "DeLorean Time Machine",
+  "Diesel",
+  "Diestro",
+  "Dingo",
+  "Dodge Charger Daytona Scat Pack",
+  "Dodge Charger SRT Hellcat",
+  "Dominus",
+  "Dominus GT",
+  "Ecto-1",
+  "Emperor",
+  "Emperor II",
+  "Emperor II: Scorched",
+  "Endo",
+  "Esper",
+  "Fast & Furious Dodge Charger",
+  "Fast & Furious Dodge Charger SRT Hellcat",
+  "Fast & Furious Mazda RX-7",
+  "Fast & Furious Nissan Skyline",
+  "Fast & Furious Pontiac Fiero",
+  "Fast 4WD",
+  "Fennec",
+  "Fennec ZR-F",
+  "Ferrari 296 GTB",
+  "Ferrari F40",
+  "Ford Bronco Raptor",
+  "Ford Bronco Raptor RLE",
+  "Ford F-150 RLE",
+  "Ford Mustang Classic Combo Bundle",
+  "Ford Mustang GTD",
+  "Ford Mustang Mach-E RLE",
+  "Ford Mustang Shelby GT350R RLE",
+  "Ford Mustang Shelby GT500",
+  "Formula 1 2021",
+  "Formula 1 2022",
+  "Fuse",
+  "Gazella GT",
+  "Gizmo",
+  "Grog",
+  "Guardian",
+  "Guardian G1",
+  "Guardian GXT",
+  "Harbinger",
+  "Harbinger GXT",
+  "Hogsticker",
+  "Homer's Car",
+  "Honda Civic Type R",
+  "Honda Civic Type R-LE",
+  "Hotshot",
+  "Ice Charger",
+  "Imperator DT5",
+  "Insidio",
+  "Jackal",
+  "Jeep Wrangler",
+  "Jurassic Jeep Wrangler",
+  "Jäger 619",
+  "K.I.T.T.",
+  "Komodo",
+  "Lamborghini Countach",
+  "Lamborghini Huracán",
+  "Lamborghini Huracán STO",
+  "Lamborghini Urus SE",
+  "Lightning McQueen",
+  "Lockjaw",
+  "Luigi NSR",
+  "Maestro",
+  "Magnifique",
+  "Magnifique GXT",
+  "Mako",
+  "Mamba",
+  "Mantis",
+  "Marauder",
+  "Mario NSR",
+  "Masamune",
+  "Maverick",
+  "Maverick G1",
+  "Maverick GXT",
+  "Maven",
+  "McLaren 570S",
+  "McLaren 765LT",
+  "McLaren P1",
+  "McLaren Senna",
+  "Megastar",
+  "Merc",
+  "Mercedes-AMG GT 63 S",
+  "Mercedes-Benz CLA",
+  "Miku Dark",
+  "Miku Miku",
+  "Miku Pink",
+  "MR11",
+  "Mudcat",
+  "Mudcat G1",
+  "Mudcat GXT",
+  "NASCAR Chevrolet Camaro",
+  "NASCAR Next Gen Ford Mustang",
+  "NASCAR Next Gen Toyota Camry",
+  "Nemesis",
+  "Nexus",
+  "Nexus SC",
+  "Nimbus",
+  "Nissan 350Z",
+  "Nissan Fairlady Z",
+  "Nissan Silvia",
+  "Nissan Silvia RLE",
+  "Nissan Z Performance Car",
+  "Nomad",
+  "Nomad GXT",
+  "Octane",
+  "Octane ZSR",
+  "Outlaw",
+  "Outlaw GXT",
+  "Paladin",
+  "Patty Wagon",
+  "Peregrine TT",
+  "Pizza Planet Delivery Truck",
+  "Porsche 911 GT3 RS",
+  "Porsche 911 Turbo",
+  "Porsche 918 Spyder",
+  "Porsche Cayenne Turbo Electric",
+  "Primo",
+  "Proteus",
+  "Psyclops",
+  "Quadra Turbo-R",
+  "R3MX",
+  "R3MX GXT",
+  "Ram 1500 RHO",
+  "Recoil AV",
+  "Redline",
+  "Ripper",
+  "Rivian R1S",
+  "Road Hog",
+  "Road Hog XL",
+  "Ronin",
+  "Ronin G1",
+  "Ronin GXT",
+  "Samurai",
+  "Samus' Gunship",
+  "Scarab",
+  "Scorpion",
+  "Sentinel",
+  "Shokunin",
+  "Shokunin GXT",
+  "Stampede",
+  "Sweet Tooth",
+  "Takumi",
+  "Takumi RX-T",
+  "Tesla Cybertruck",
+  "The Incredibile",
+  "The Mystery Machine",
+  "Triton",
+  "Turtle Van",
+  "Twin Mill III",
+  "Twinzer",
+  "Tygris",
+  "Tyranno",
+  "Tyranno GXT",
+  "Venom",
+  "Void Burn",
+  "Volkswagen Golf GTI",
+  "Volkswagen Golf GTI RLE",
+  "Vulcan",
+  "Warthog",
+  "Werewolf",
+  "Whiplash",
+  "X-Devil",
+  "X-Devil MK2",
+  "Xentari",
+  "Zefira",
+  "Zippy"
 ];
 
 const lerpColor = (color1, color2, factor) => {
@@ -155,6 +356,7 @@ function App() {
 
   const [searchId, setSearchId] = useState('');
   const [allData, setAllData] = useState([]);
+
   const [playerHistory, setPlayerHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [seasonsList, setSeasonsList] = useState([]);
@@ -183,6 +385,11 @@ function App() {
   const [p1TargetSeason, setP1TargetSeason] = useState('Career'); 
   const [p2TargetSeason, setP2TargetSeason] = useState('Career');
 
+  // Player 3 Comparison (Three-way)
+  const [player3Id, setPlayer3Id] = useState('');
+  const [player3History, setPlayer3History] = useState([]);
+  const [p3TargetSeason, setP3TargetSeason] = useState('Career');
+
   const [suggestions, setSuggestions] = useState([]);
   const [activeField, setActiveField] = useState(null); // 'sync', 'veteran', 'p1', or 'p2'
 
@@ -208,7 +415,8 @@ function App() {
 
     // Route the results to the correct state
     if (target === 'p1') updatePlayerHistory(matches);
-    else updatePlayer2History(matches);
+    else if (target === 'p2') updatePlayer2History(matches);
+    else if (target === 'p3') updatePlayer3History(matches);
   };
 
   // Mirrors the current update function for Player 2
@@ -225,7 +433,21 @@ function App() {
     setPlayer2History(uniqueData.sort((a, b) => seasonsList.indexOf(a.seasonLabel) - seasonsList.indexOf(b.seasonLabel)));
   };
 
-  const getVersusRadarData = (p1Data, p2Data) => {
+  // Mirrors the current update function for Player 3
+  const updatePlayer3History = (newData) => {
+    const uniqueData = [];
+    const seenKeys = new Set();
+    newData.forEach(row => {
+      const fingerprint = `${row.seasonLabel}-${getStat(row, 'name')}-${getStat(row, 'gp')}`;
+      if (!seenKeys.has(fingerprint)) {
+        uniqueData.push(row);
+        seenKeys.add(fingerprint);
+      }
+    });
+    setPlayer3History(uniqueData.sort((a, b) => seasonsList.indexOf(a.seasonLabel) - seasonsList.indexOf(b.seasonLabel)));
+  };
+
+  const getVersusRadarData = (p1Data, p2Data, p3Data) => {
     const stats = ['gpg', 'shpg', 'apg', 'svpg', 'winPct'];
     
     const process = (history, targetSeason) => {
@@ -261,7 +483,8 @@ function App() {
 
     return { 
       p1: process(p1Data, p1TargetSeason), 
-      p2: process(p2Data, p2TargetSeason) 
+      p2: process(p2Data, p2TargetSeason),
+      p3: process(p3Data, p3TargetSeason)
     };
   };
 
@@ -384,22 +607,43 @@ function App() {
   const calculateOVR = (history) => {
     if (!history || history.length === 0) return "50";
     
-    // 1. Unify duplicates first
+    // 1. Unify duplicates first (combines dual-roster or mid-season shifts) -- Future possible
     const unified = getUnifiedHistory(history);
     
-    // 2. Filter for qualified seasons (Combined 20+ GP) and take top 3
+    // 2. Identify the absolute baseline anchor: What is the player's most recent active season overall?
+    // Sort unified history by seasonsList index (0 is newest/latest) to find the absolute latest print
+    const sortedByRecency = [...unified].sort(
+      (a, b) => seasonsList.indexOf(a.seasonLabel) - seasonsList.indexOf(b.seasonLabel)
+    );
+    const latestActiveSeason = sortedByRecency[0]?.seasonLabel;
+    const latestSeasonIndex = seasonsList.indexOf(latestActiveSeason);
+
+    // 3. Filter and parse valid performance pools based on qualified GP AND recency
     const valid = unified
-      .filter(s => s.calculatedGP >= 20)
-      .sort((a, b) => seasonsList.indexOf(a.seasonLabel) - seasonsList.indexOf(b.seasonLabel))
+      .filter(s => {
+        const currentSeasonIndex = seasonsList.indexOf(s.seasonLabel);
+        // Calculate the physical season gap (e.g., S26 index 0 to S22 index 4 = distance of 4)
+        const seasonDistance = currentSeasonIndex - latestSeasonIndex;
+        
+        // CONDITION A: Must be a Qualified Season (20+ GP)
+        // CONDITION B: Must fall strictly within a 4-season max window from their latest activity
+        return s.calculatedGP >= 20 && seasonDistance <= 4;
+      })
+      // Sort by highest SBV first to prioritize their peak performances within that valid timeframe
+      .sort((a, b) => b.calculatedSBV - a.calculatedSBV)
+      // Take up to the top 3 highest-impact qualified seasons
       .slice(0, 3);
 
     let weightedSBV = 0;
+    
     if (valid.length > 0) {
+      // If we found qualified seasons within the recency window, compute the standard weighted average
       const totalGP = valid.reduce((acc, s) => acc + s.calculatedGP, 0);
       const sumProd = valid.reduce((acc, s) => acc + (s.calculatedSBV * s.calculatedGP), 0);
       weightedSBV = sumProd / totalGP;
     } else { 
-      weightedSBV = unified[0]?.calculatedSBV || 0; 
+      // FALLBACK: If NO seasons qualify or everything is historic, drop completely to their absolute latest season
+      weightedSBV = sortedByRecency[0]?.calculatedSBV || 0; 
     }
 
     let rawOvr;
@@ -1068,12 +1312,20 @@ const downloadCard = () => {
                               className="font-black italic uppercase tracking-tighter leading-none mb-3 text-4xl sm:text-5xl md:text-7xl"
                               style={{ 
                                 fontSize: getStat(latest, 'name').length > 10 
-                                  ? `clamp(24px, 8vw, 52px)` // Use clamp to prevent it from ever getting too big/small
+                                  ? `clamp(24px, 8vw, 52px)` // Clamp to prevent it from ever getting too big/small
                                   : '' 
                               }}
                             >
                               {getStat(latest, 'name')}
                             </h2>
+
+                            {/* --- PLAYER ID: RSC ID (RSC######) --- */}
+                            {getStat(latest, 'id') && getStat(latest, 'id') !== 'N/A' && (
+                              <p className="font-mono text-[11px] font-black uppercase tracking-[0.25em] text-slate-500/80 mb-3 block">
+                                PLAYER ID | <span className="text-slate-400 select-all">{getStat(latest, 'id')}</span>
+                              </p>
+                            )}
+
                             <div className="flex items-center gap-6 text-slate-400 font-bold uppercase text-[12px] tracking-[0.2em] truncate">
                               {(() => {
                                   const franchise = getStat(latest, 'franchise').split('\n').pop();
@@ -1216,6 +1468,7 @@ const downloadCard = () => {
                               <th className="pb-6" title="The competitive RSC season period">Season</th>
                               <th className="pb-6" title="The league tier level the player played in">Tier</th>
                               <th className="pb-6" title="The organization the player represented">Franchise</th>
+                              {/*<th className="pb-6" title="Overall Rating calculated for this specific season execution">OVR</th> --- Scrapped for now*/}
                               <th className="pb-6 text-center pr-10" title="Games Played">GP</th>
                               <th className="pb-6" title="Stats-Based Value: A composite metric of overall impact">SBV</th>
                               <th className="pb-6" title="Points Per Game: Total score divided by games played">PPG</th>
@@ -1232,6 +1485,8 @@ const downloadCard = () => {
                               const gp = getStat(row, 'gp');
                               const tier = getStat(row, 'tier');
 
+                              {/*const seasonOvr = calculateOVR([row]);*/}
+
                               return (
                                 <tr key={`${row.seasonLabel}-${idx}`} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group relative">
                                   <td className="py-6 text-blue-500 italic font-black pl-2">
@@ -1242,7 +1497,7 @@ const downloadCard = () => {
                                           const rowId = getStat(row, 'id');
                                           const rowName = getStat(row, 'name').toLowerCase();
                                           
-                                          // Identity anchors from the current search/profile
+                                          // ID anchors from the current search/profile
                                           const masterId = latest ? getStat(latest, 'id') : null;
                                           const masterName = latest ? getStat(latest, 'name').toLowerCase() : '';
                                           const cleanSearch = searchId.trim().toLowerCase();
@@ -1254,7 +1509,7 @@ const downloadCard = () => {
                                           // SCENARIO C: MANUAL VETERAN LINK
                                           const isManualLink = aliases.some(a => a.toLowerCase() === rowName);
 
-                                          // SCENARIO A: HARD MISMATCH (Yellow Warning Logic)
+                                          // SCENARIO A: HARD MISMATCH (Yellow Warning)
                                           // Trigger warning if: 1. It's a manual link with a different ID, OR 2. It's an auto-result with a different ID
                                           const isManualConflict = isManualLink && hasRealRowId && hasRealMasterId && rowId !== masterId;
                                           const isAutoMismatch = !isManualLink && rowName === cleanSearch && hasRealRowId && hasRealMasterId && rowId !== masterId;
@@ -1304,6 +1559,7 @@ const downloadCard = () => {
                                   </td>
                                   <td className="py-6 text-[10px] uppercase font-black" style={{color: getTierColor(tier)}}>{tier.split('\n').pop()}</td>
                                   <td className="py-6 text-slate-400 text-[10px] uppercase">{getStat(row, 'franchise').split('\n').pop()}</td>
+                                  {/*<td className="py-6 font-black font-mono text-sm text-yellow-500/90 italic tracking-tighter">{seasonOvr}</td>*/}
                                   <td className="py-6 text-center font-mono opacity-40 pr-10">{gp}</td>
 
                                   {/* REPLACEMENT FOR RENDERCELL: Dynamic Stat Mapping */}
@@ -1348,6 +1604,8 @@ const downloadCard = () => {
                               
                               if (totalGP === 0) return null;
 
+                              const averageGP = Math.round(totalGP / validHistory.length);
+
                               // To calculate weighted average for a specific key
                               const getWeightedAvg = (key) => {
                                 const weightedSum = validHistory.reduce((acc, row) => {
@@ -1363,7 +1621,8 @@ const downloadCard = () => {
                                   <td className="py-6 pl-2 text-blue-400 uppercase tracking-tighter">CAREER</td>
                                   <td className="py-6 text-[10px] text-slate-500"></td>
                                   <td className="py-6 text-[10px] text-slate-500">WEIGHTED AVERAGE</td>
-                                  <td className="py-6 text-center pr-10 text-white opacity-100">{totalGP}</td>
+                                  {/*<td className="py-6 text-[10px] text-slate-500"></td>*/}
+                                  <td className="py-6 text-center pr-10 text-white opacity-100 font-mono text-sm">{averageGP}</td>
                                   
                                   {['sbv', 'ppg', 'gpg', 'shpg', 'shPct', 'apg', 'svpg'].map(key => {
                                     const avgVal = getWeightedAvg(key);
@@ -1410,17 +1669,21 @@ const downloadCard = () => {
                 };
 
                 return (
-                  <div className={`max-w-[95%] mx-auto mt-12 p-10 rounded-[3rem] no-print mb-20 shadow-2xl transition-all duration-1000 border ${theme === 'royal' ? 'bg-black/40 border-white/10' : 'bg-slate-900/50 border-white/5'}`}>
-                    <div className="flex justify-between items-center mb-10">
-                      <h3 className="text-[14px] font-black uppercase text-yellow-500 tracking-[0.3em] italic">
-                        Career Performance Journey
-                      </h3>
-                      <div className="flex gap-4">
-                        <span className="text-[14px] font-bold text-white uppercase">Range: -50 to 150 SBV</span>
-                      </div>
+                  <div className={`max-w-[95%] mx-auto mt-12 p-4 sm:p-6 md:p-10 rounded-3xl no-print mb-20 shadow-2xl transition-all duration-1000 border ${theme === 'royal' ? 'bg-black/40 border-white/10' : 'bg-slate-900/50 border-white/5'}`}>
+                  {/* Header Section: Stacked on mobile, split row on desktop */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-6 md:mb-10 text-center sm:text-left">
+                    <h3 className="text-xs md:text-[14px] font-black uppercase text-yellow-500 tracking-[0.3em] italic">
+                      Career Performance Journey
+                    </h3>
+                    <div className="flex gap-4">
+                      <span className="text-[10px] md:text-[14px] font-bold text-white uppercase opacity-60 md:opacity-100">Range: -50 to 150 SBV</span>
                     </div>
-                    
-                    <div className="relative w-full">
+                  </div>
+                  
+                  {/* Scroll Container: Prevents the graph from turning into an unreadable squished sliver on phones */}
+                  <div className="w-full overflow-x-auto scrollbar-hide touch-pan-x">
+                    {/* Setting a min-width ensures a guaranteed smooth canvas aspect ratio for swiping on portrait layouts */}
+                    <div className="relative w-full min-w-[650px] md:min-w-full">
                       <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
                         {/* Y-Axis Grid Lines */}
                         {[0, 50, 100, 150].map(val => (
@@ -1508,6 +1771,7 @@ const downloadCard = () => {
                       </svg>
                     </div>
                   </div>
+                </div>
                 );
               })()}
             </div>
@@ -1516,8 +1780,8 @@ const downloadCard = () => {
         )}
 
         {activeTab === 'versus' && (
-          <div className="col-span-4 space-y-8"> {/* Removed opacity-20 and italic classes */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 no-print">
+          <div className="col-span-4 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 no-print">
               {/* PLAYER 1 SEARCH */}
               <div className={`p-6 rounded-3xl border border-blue-500/20 shadow-xl transition-all duration-1000 ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
                 <h2 className="text-[12px] font-black uppercase text-blue-500 mb-4 tracking-widest text-center">Player 1</h2>
@@ -1652,6 +1916,71 @@ const downloadCard = () => {
                   </select>
                 </div>
               </div>
+
+            {/* PLAYER 3 SEARCH */}
+              <div className={`p-6 rounded-3xl border border-amber-500/20 shadow-xl transition-all duration-1000 ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
+                <h2 className="text-[12px] font-black uppercase text-amber-500 mb-4 tracking-widest text-center">Player 3</h2>
+                <div className="relative">
+                  <input 
+                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl mb-3 outline-none text-white focus:border-amber-500/50" 
+                    placeholder="ID or Username..." 
+                    value={player3Id}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPlayer3Id(val);
+                      setActiveField('p3');
+                      if (val.length > 1 && allData?.length > 0) {
+                        const matches = [...new Set(allData.map(d => getStat(d, 'name')).filter(n => n?.toLowerCase().includes(val.toLowerCase())))].slice(0, 5);
+                        setSuggestions(matches);
+                      } else { setSuggestions([]); }
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && (performSearch(player3Id, 'p3'), setSuggestions([]))}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+
+                  {/* P3 Suggestions Overlay */}
+                  {activeField === 'p3' && suggestions.length > 0 && (
+                    <div className="absolute z-[100] w-full left-0 top-[calc(100%-8px)]">
+                      <div className="bg-[#03050a] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                        {suggestions.map((name) => (
+                          <div 
+                            key={name}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlayer3Id(name);
+                              setSuggestions([]);
+                              setActiveField(null);
+                            }}
+                            className="px-4 py-3 text-[10px] font-black uppercase text-slate-400 hover:bg-amber-600/20 hover:text-amber-400 cursor-pointer border-b border-white/5 last:border-0 transition-colors italic"
+                          >
+                            {name}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => performSearch(player3Id, 'p3')} 
+                    className="flex-1 bg-amber-600/20 text-amber-400 hover:bg-amber-600 hover:text-white py-2 rounded-lg font-black uppercase italic text-[11px] transition-all border border-amber-500/30 cursor-pointer"
+                  >
+                    Compare P3
+                  </button>
+                  <select 
+                    value={p3TargetSeason}
+                    onChange={(e) => setP3TargetSeason(e.target.value)}
+                    className="bg-[#03050a] border border-white/20 rounded-lg px-4 py-2 text-[10px] font-black uppercase text-white outline-none cursor-pointer hover:border-amber-500/50 transition-colors"
+                  >
+                    <option value="Career">CAREER AVG</option>
+                    {player3History.map(s => (
+                      <option key={s.seasonLabel} value={s.seasonLabel}>
+                        {s.seasonLabel} {getStat(s, 'tier').split('\n').pop()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Option Buttons */}
@@ -1675,18 +2004,14 @@ const downloadCard = () => {
             </div>
 
             {/* PREVIEWS ROW */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
               {[
-                { history: playerHistory, target: p1TargetSeason, color: 'blue', label: 'Player 1' },
-                { history: player2History, target: p2TargetSeason, color: 'red', label: 'Player 2' }
+                { history: playerHistory, target: p1TargetSeason, color: 'blue', label: 'Player 1', textClass: 'text-blue-500', borderClass: 'border-blue-500/20', bgClass: 'bg-blue-500/5' },
+                { history: player2History, target: p2TargetSeason, color: 'red', label: 'Player 2', textClass: 'text-red-500', borderClass: 'border-red-500/20', bgClass: 'bg-red-500/5' },
+                { history: player3History, target: p3TargetSeason, color: 'amber', label: 'Player 3', textClass: 'text-amber-500', borderClass: 'border-amber-500/20', bgClass: 'bg-amber-500/5' }
               ].map((p, i) => {
-                const themeStyles = {
-                  blue: "bg-blue-500/5 border-blue-500/20 text-blue-500",
-                  red: "bg-red-500/5 border-red-500/20 text-red-500" // Explicitly defines the red faint theme
-                };
-
                 if (p.history.length === 0) return (
-                  <div key={i} className={`p-6 rounded-3xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 border ${themeStyles[p.color]}`}>
+                  <div key={i} className="p-6 rounded-3xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 border bg-white/[0.01] border-white/5 text-slate-500 font-bold uppercase tracking-wider text-xs justify-center italic">
                     Awaiting {p.label}
                   </div>
                 );
@@ -1717,7 +2042,7 @@ const downloadCard = () => {
                       <h3 className="text-xl font-black uppercase italic leading-none text-white">
                         {getStat(displayRow, 'name')}
                       </h3>
-                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${p.color === 'blue' ? 'text-blue-500' : 'text-red-500'}`}>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${p.textClass}`}>
                         {p.target === 'Career' ? 'Career' : p.target} {tierName} | OVR: {displayOvr}
                       </p>
                       <p className="text-[8px] text-slate-500 uppercase font-black mt-1 tracking-tighter italic">
@@ -1730,21 +2055,26 @@ const downloadCard = () => {
             </div>
 
             {/* SHARED ATTRIBUTE MATRIX */}
-            {(playerHistory.length > 0 || player2History.length > 0) && (
-              <div className={`border border-white/5 p-12 rounded-[3rem] shadow-2xl mt-8 transition-all duration-1000 ${theme === 'royal' ? 'bg-black/60' : 'bg-slate-900/80'}`}>
-                <div className="flex justify-between items-center mb-10">
+            {(playerHistory.length > 0 || player2History.length > 0 || player3History.length > 0) && (
+              <div className={`border border-white/5 p-12 rounded-3xl shadow-2xl mt-8 transition-all duration-1000 ${theme === 'royal' ? 'bg-black/60' : 'bg-slate-900/80'}`}>
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-6 mb-8 md:mb-10 text-center lg:text-left">
                   <div>
-                    <h2 className="text-2xl font-black uppercase italic tracking-tighter text-white">Attribute Comparison</h2>
+                    <h2 className="text-xl md:text-2xl font-black uppercase italic tracking-tighter text-white">Attribute Comparison</h2>
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1">Direct Archetype Overlap</p>
                   </div>
-                  <div className="flex gap-6">
-                    <div className="flex items-center gap-2">
+                  {/* PLAYER LEGEND */}
+                  <div className="grid grid-cols-3 sm:flex justify-center gap-4 sm:gap-6">
+                    <div className="flex items-center justify-center gap-2">
                       <div className="w-3 h-3 bg-blue-500 rounded-sm shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                      <span className="text-[10px] font-black uppercase text-slate-300">Player 1</span>
+                      <span className="text-[10px] font-black uppercase text-slate-300 whitespace-nowrap">Player 1</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <div className="w-3 h-3 bg-red-500 rounded-sm shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
-                      <span className="text-[10px] font-black uppercase text-slate-300">Player 2</span>
+                      <span className="text-[10px] font-black uppercase text-slate-300 whitespace-nowrap">Player 2</span>
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-3 h-3 bg-amber-500 rounded-sm shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div>
+                      <span className="text-[10px] font-black uppercase text-slate-300 whitespace-nowrap">Player 3</span>
                     </div>
                   </div>
                 </div>
@@ -1794,7 +2124,7 @@ const downloadCard = () => {
 
                     {/* DATA POLYGONS */}
                     {(() => {
-                      const radar = getVersusRadarData(playerHistory, player2History);
+                      const radar = getVersusRadarData(playerHistory, player2History, player3History);
 
                       // Helper to determine if a player's current view is "Qualified"
                       const getIsQualified = (history, targetSeason) => {
@@ -1810,6 +2140,7 @@ const downloadCard = () => {
 
                       const p1Qualified = getIsQualified(playerHistory, p1TargetSeason);
                       const p2Qualified = getIsQualified(player2History, p2TargetSeason);
+                      const p3Qualified = getIsQualified(player3History, p3TargetSeason);
 
                       return (
                         <>
@@ -1839,6 +2170,19 @@ const downloadCard = () => {
                             strokeDasharray={p2Qualified ? "0" : "2,2"}
                             className="transition-all duration-1000"
                           />
+                        {/* Player 3 (Yellow) */}
+                          <polygon
+                            points={radar.p3.map((val, i) => {
+                              const angle = (i * 72 - 90) * (Math.PI / 180);
+                              const r = (val / 100) * 50;
+                              return `${50 + r * Math.cos(angle)},${50 + r * Math.sin(angle)}`;
+                            }).join(' ')}
+                            fill={p3Qualified ? "rgba(245, 158, 11, 0.15)" : "rgba(212, 163, 115, 0.05)"}
+                            stroke={p3Qualified ? "#f59e0b" : "#d4a373"}
+                            strokeWidth="1"
+                            strokeDasharray={p3Qualified ? "0" : "2,2"}
+                            className="transition-all duration-1000"
+                          />
                         </>
                       );
                     })()}
@@ -1848,152 +2192,160 @@ const downloadCard = () => {
             )}
 
             {/* STAT COMPARISON TABLE */}
-            {(playerHistory.length > 0 || player2History.length > 0) && (
-              <div className={`border border-white/5 rounded-[3rem] overflow-hidden mt-8 shadow-2xl transition-all duration-1000 ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className={`${theme === 'royal' ? 'bg-white/[0.03]' : 'bg-white/5'} border-b border-white/5 uppercase text-[10px] font-black`}>
-                      <th className="p-6 text-slate-500 tracking-widest">Metric</th>
-                      <th className="p-6 text-center text-blue-400 italic">
-                        {playerHistory[0] ? getStat(playerHistory[0], 'name') : "Player 1"}
-                      </th>
-                      {showAverage && (
-                        <th className="p-6 text-center text-emerald-400 italic border-x border-white/5">
-                          Reference Avg ({averageType === 'tier' ? 'Tier' : 'League'})
+            {(playerHistory.length > 0 || player2History.length > 0 || player3History.length > 0) && (
+              <div className={`border border-white/5 rounded-3xl overflow-hidden mt-8 shadow-2xl transition-all duration-1000 ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
+                
+                <div className="w-full overflow-x-auto scrollbar-hide">
+                  <table className="w-full text-left table-fixed min-w-[700px]">
+                    <thead>
+                      <tr className={`${theme === 'royal' ? 'bg-white/[0.03]' : 'bg-white/5'} border-b border-white/5 uppercase text-[10px] font-black`}>
+                        
+                        <th className={`p-6 text-slate-500 tracking-widest transition-all duration-300 ${showAverage ? 'w-[16%]' : 'w-[22%]'}`}>Metric</th>
+                        
+                        <th className={`p-6 text-center text-blue-400 italic transition-all duration-300 truncate ${showAverage ? 'w-[24%]' : 'w-[26%]'}`}>
+                          <div className="truncate px-1" title={playerHistory[0] ? getStat(playerHistory[0], 'name') : "Player 1"}>
+                            {playerHistory[0] ? getStat(playerHistory[0], 'name') : "Player 1"}
+                          </div>
                         </th>
-                      )}
-                      <th className="p-6 text-center text-red-400 italic">
-                        {player2History[0] ? getStat(player2History[0], 'name') : "Player 2"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm font-bold uppercase">
-                    {[
-                      { label: 'OVR', key: 'ovr' },
-                      { label: 'Games Played', key: 'gp' },
-                      { label: 'SBV', key: 'sbv' },
-                      { label: 'Goals PG (GPG)', key: 'gpg' },
-                      { label: 'Assists PG (APG)', key: 'apg' },
-                      { label: 'Saves PG (SvPG)', key: 'svpg' },
-                      { label: 'Pressure PG (ShPG)', key: 'shpg' },
-                      { label: 'Shooting %', key: 'shPct', isPct: true },
-                      { label: 'Win Rate', key: 'winPct', isPct: true }
-                    ].map((metric, i) => {
-                      const p1Row = p1TargetSeason === 'Career' ? playerHistory[0] : playerHistory.find(s => s.seasonLabel === p1TargetSeason);
-                      const p2Row = p2TargetSeason === 'Career' ? player2History[0] : player2History.find(s => s.seasonLabel === p2TargetSeason);
-                      
-                      const p1Tier = p1Row ? getStat(p1Row, 'tier') : "Premier";
-                      const avgStats = showAverage ? getAverageStatline(p1TargetSeason, p1Tier, averageType) : null;
-                      const refVal = metric.key === 'ovr' ? 75 : (avgStats?.[metric.key] || 0);
-
-                      const getVal = (hist, target) => {
-                        if (hist.length === 0) return 0;
                         
-                        const validData = hist.filter(s => (parseInt(getStat(s, 'gp')) || 0) > 0);
-                        const data = target === 'Career' ? validData : validData.filter(s => s.seasonLabel === target);
+                        <th className={`p-6 text-center text-red-400 italic transition-all duration-300 truncate ${showAverage ? 'w-[24%]' : 'w-[26%]'}`}>
+                          <div className="truncate px-1" title={player2History[0] ? getStat(player2History[0], 'name') : "Player 2"}>
+                            {player2History[0] ? getStat(player2History[0], 'name') : "Player 2"}
+                          </div>
+                        </th>
                         
-                        if (data.length === 0) return 0;
-
-                        if (metric.key === 'ovr') {
-                          return calculateOVR(data);
-                        }
-
-                        // WEIGHTED LOGIC: (Stat * Games) / Total Games
-                        const totalGames = data.reduce((acc, s) => acc + (parseInt(getStat(s, 'gp')) || 0), 0);
-                        const weightedSum = data.reduce((acc, s) => {
-                          const stat = parseFloat(getStat(s, metric.key)) || 0;
-                          const games = parseInt(getStat(s, 'gp')) || 0;
-                          return acc + (stat * games);
-                        }, 0);
-
-                        return totalGames > 0 ? weightedSum / totalGames : 0;
-                      };
-
-                      const v1 = getVal(playerHistory, p1TargetSeason);
-                      const v2 = getVal(player2History, p2TargetSeason);
-
-                      const renderCell = (val, colorClass, isP1) => {
-                        if (val === undefined || val === null) return <td className="p-6 text-center text-slate-700">-</td>;
+                        <th className={`p-6 text-center text-amber-400 italic transition-all duration-300 truncate ${showAverage ? 'w-[24%]' : 'w-[26%]'}`}>
+                          <div className="truncate px-1" title={player3History[0] ? getStat(player3History[0], 'name') : "Player 3"}>
+                            {player3History[0] ? getStat(player3History[0], 'name') : "Player 3"}
+                          </div>
+                        </th>
                         
-                        const otherVal = isP1 ? v2 : v1;
-                        const roundedVal = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(val) : val;
-                        const roundedRef = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal;
-
-                        const diff = roundedVal - roundedRef;
-                        const percentDiff = refVal > 0 ? (diff / refVal) : 0;
-
-                        let finalColor = 'text-slate-500';
+                        {showAverage && (
+                          <th className="p-6 text-center text-emerald-400 italic border-l border-white/5 w-[12%]">
+                            Ref ({averageType === 'tier' ? 'Tier' : 'Lg'})
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm font-bold uppercase">
+                      {[
+                        { label: 'OVR', key: 'ovr' },
+                        { label: 'Games Played', key: 'gp' },
+                        { label: 'SBV', key: 'sbv' },
+                        { label: 'Goals PG (GPG)', key: 'gpg' },
+                        { label: 'Assists PG (APG)', key: 'apg' },
+                        { label: 'Saves PG (SvPG)', key: 'svpg' },
+                        { label: 'Shots PG (ShPG)', key: 'shpg' },
+                        { label: 'Shooting %', key: 'shPct', isPct: true },
+                        { label: 'Win Rate', key: 'winPct', isPct: true }
+                      ].map((metric, i) => {
+                        const p1Row = p1TargetSeason === 'Career' ? playerHistory[0] : playerHistory.find(s => s.seasonLabel === p1TargetSeason);
+                        const p2Row = p2TargetSeason === 'Career' ? player2History[0] : player2History.find(s => s.seasonLabel === p2TargetSeason);
+                        const p3Row = p3TargetSeason === 'Career' ? player3History[0] : player3History.find(s => s.seasonLabel === p3TargetSeason);
                         
-                        if (showAverage) {
-                          // If we are comparing to the Reference Average
-                          if (percentDiff > 0.40) {
-                            finalColor = 'text-cyan-400 animate-pulse font-black'; // +40% over avg (Elite)
-                          } else if (val >= refVal) {
-                            finalColor = colorClass; // Better than avg (Blue/Red)
-                          } else if (percentDiff < -0.40) {
-                            finalColor = 'text-red-500 opacity-40'; // -40% below avg (Struggling)
+                        const p1Tier = p1Row ? getStat(p1Row, 'tier') : "Premier";
+                        const avgStats = showAverage ? getAverageStatline(p1TargetSeason, p1Tier, averageType) : null;
+                        const refVal = metric.key === 'ovr' ? 75 : (avgStats?.[metric.key] || 0);
+
+                        const getVal = (hist, target) => {
+                          if (!hist || hist.length === 0) return 0;
+                          const validData = hist.filter(s => (parseInt(getStat(s, 'gp')) || 0) > 0);
+                          const data = target === 'Career' ? validData : validData.filter(s => s.seasonLabel === target);
+                          if (data.length === 0) return 0;
+
+                          if (metric.key === 'ovr') {
+                            return calculateOVR(data);
                           }
-                        } else {
-                          // If comparing P1 vs P2 directly
-                          if (val > otherVal) finalColor = colorClass;
-                        }
 
-                        const indicator = diff > 0.01 ? <span className="text-emerald-500 ml-2">▲</span> : 
-                                        diff < -0.01 ? <span className="text-red-500 ml-2">▼</span> : 
-                                        <span className="text-slate-600 ml-2 font-extrabold">~</span>;
+                          const totalGames = data.reduce((acc, s) => acc + (parseInt(getStat(s, 'gp')) || 0), 0);
+                          const weightedSum = data.reduce((acc, s) => {
+                            const stat = parseFloat(getStat(s, metric.key)) || 0;
+                            const games = parseInt(getStat(s, 'gp')) || 0;
+                            return acc + (stat * games);
+                          }, 0);
 
-                        let display;
-                        if (metric.key === 'ovr' || metric.key === 'gp') {
+                          return totalGames > 0 ? weightedSum / totalGames : 0;
+                        };
+
+                        const v1 = getVal(playerHistory, p1TargetSeason);
+                        const v2 = getVal(player2History, p2TargetSeason);
+                        const v3 = getVal(player3History, p3TargetSeason);
+
+                        const renderCell = (val, colorClass, currentHistory, currentTarget, contextRow) => {
+                          if (!currentHistory || currentHistory.length === 0) {
+                            return <td className="p-6 text-center text-slate-700 font-mono text-base">-</td>;
+                          }
+                          
+                          const roundedVal = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(val) : val;
+                          const roundedRef = metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal;
+                          const diff = roundedVal - roundedRef;
+                          const percentDiff = refVal > 0 ? (diff / refVal) : 0;
+
+                          let finalColor = 'text-slate-500';
+                          
+                          if (showAverage) {
+                            if (percentDiff > 0.40) {
+                              finalColor = 'text-cyan-400 animate-pulse font-black';
+                            } else if (val >= refVal) {
+                              finalColor = colorClass;
+                            } else if (percentDiff < -0.40) {
+                              finalColor = 'text-red-500 opacity-40';
+                            }
+                          } else {
+                            const maxVal = Math.max(v1, v2, v3);
+                            if (val === maxVal && val > 0) finalColor = `${colorClass} font-black drop-shadow-[0_0_12px_rgba(255,255,255,0.15)]`;
+                          }
+
+                          const indicator = diff > 0.01 ? <span className="text-emerald-500 ml-1 text-xs">▲</span> : 
+                                            diff < -0.01 ? <span className="text-red-500 ml-1 text-xs">▼</span> : 
+                                            <span className="text-slate-600 ml-1 font-extrabold">~</span>;
+
+                          let display;
+                          if (metric.key === 'ovr' || metric.key === 'gp') {
                             display = Math.round(val);
-                        } else if (compMode === 'percentile') {
-                            const contextRow = isP1 ? p1Row : p2Row;
+                          } else if (compMode === 'percentile') {
                             const pData = contextRow ? getPercentileData(contextRow, metric.key) : null;
-                            
-                            // NEW: Show raw stat in parentheses next to the Rank
-                            let rawVal;
-                            if (metric.key === 'shPct') rawVal = formatShPct(val);
-                            else if (metric.isPct) rawVal = formatWinPct(val);
-                            else rawVal = val.toFixed(2);
+                            let rawVal = metric.key === 'shPct' ? formatShPct(val) : metric.isPct ? formatWinPct(val) : val.toFixed(2);
 
                             display = pData ? (
                               <div className="flex flex-col items-center">
-                                <span className="text-[10px] opacity-40 font-black mb-1">{rawVal}</span>
+                                <span className="text-[10px] opacity-40 font-black mb-0.5">{rawVal}</span>
                                 <span className="text-xs">{pData.label} {pData.value}%</span>
                               </div>
                             ) : rawVal;
-                        } else {
-                            if (metric.key === 'shPct') display = formatShPct(val);
-                            else display = metric.isPct ? formatWinPct(val) : val.toFixed(2);
-                        }
+                          } else {
+                            display = metric.key === 'shPct' ? formatShPct(val) : metric.isPct ? formatWinPct(val) : val.toFixed(2);
+                          }
+
+                          return (
+                            <td className={`p-6 text-center font-mono text-base transition-colors duration-300 ${finalColor}`}>
+                              <div className="flex items-center justify-center gap-0.5">
+                                {display}
+                                {showAverage && indicator}
+                              </div>
+                            </td>
+                          );
+                        };
 
                         return (
-                          <td className={`p-6 text-center font-mono text-lg transition-colors duration-300 ${finalColor}`}>
-                            <div className="flex items-center justify-center gap-1">
-                              {display}
-                              {showAverage && indicator}
-                            </div>
-                          </td>
+                          <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                            <td className="p-6 text-[10px] text-slate-500 font-black tracking-widest">{metric.label}</td>
+                            {renderCell(v1, 'text-blue-400', playerHistory, p1TargetSeason, p1Row)}
+                            {renderCell(v2, 'text-red-400', player2History, p2TargetSeason, p2Row)}
+                            {renderCell(v3, 'text-amber-400', player3History, p3TargetSeason, p3Row)}
+                            {showAverage && (
+                              <td className="p-6 text-center font-mono opacity-30 border-l border-white/5 text-slate-400 text-sm">
+                                {metric.key === 'shPct' ? formatShPct(refVal) : 
+                                 metric.isPct ? formatWinPct(refVal) : 
+                                 (metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal.toFixed(2))}
+                              </td>
+                            )}
+                          </tr>
                         );
-                      };
-
-                      return (
-                        <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                          <td className="p-6 text-[10px] text-slate-500 font-black tracking-widest">{metric.label}</td>
-                          {renderCell(v1, 'text-blue-400', true)}
-                          {showAverage && (
-                            <td className="p-6 text-center font-mono opacity-30 border-x border-white/5">
-                              {/* Check for shPct specifically */}
-                              {metric.key === 'shPct' ? formatShPct(refVal) : 
-                              metric.isPct ? formatWinPct(refVal) : 
-                              (metric.key === 'ovr' || metric.key === 'gp' ? Math.round(refVal) : refVal.toFixed(2))}
-                            </td>
-                          )}
-                          {renderCell(v2, 'text-red-400', false)}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

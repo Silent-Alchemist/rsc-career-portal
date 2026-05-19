@@ -1,28 +1,24 @@
-# 🎯 v.2026.5.14 | S26 Deadeye Overhaul Update
+# 🎯 v.2026.5.19 | UI Elasticity & Integrity Update
 
 ### "The seasons always change, but the data remains." ❄️💙
 
-This release marks the most significant architectural overhaul in the history of the RSC Intelligence Portal. Designed to accommodate the record-breaking influx of new talent in Season 26, the **S26 Deadeye Overhaul** update bridges the gap between legacy veteran data and the next generation of Season 26 rookies.
+This release delivers critical enhancements to the core layout mechanics and data-ingestion pipeline of the RSC Intelligence Portal. Focusing heavily on layout elasticity, mobile chart fluidity, and rigorous data-cleansing, the UI Elasticity & Integrity update ensures your scouting telemetry remains razor-sharp, stable, and visually perfect across any viewport.
 
 ---
 
-## 📈 Analytical Overhaul
-* **Season 26 Intelligence:** Fully integrated mid-season data sheets, optimized for high-volume player searches.
-* **Weighted Career Averages:** Implemented `(Stat * GP)` weighted logic for Career Rows. This ensures that a single 4-game substitution doesn't skew a player's long-term OVR against a 60-game starter.
-* **Shooting % (Sh%) Metrics:** Deployed deadeye accuracy tracking. Scouts can now differentiate between "volume shooters" and "clinical finishers."
-* **Identity Verification (⊕):** Added verified anchors for RSC IDs. The portal now tracks name changes and veteran aliases with a verified symbol, ensuring historical continuity.
+## 📈 Analytical & Data Improvements
+* **Chronological Recency Caps:** Overhauled the core calculateOVR engine to implement a 4-season maximum tracking window anchored to a player's latest active season. Vintage stats from older eras are safely ignored, ensuring OVR values reflect current competitive form.
+* **Intelligent Data Fallbacks:** Upgraded the getStat dictionary engine to automatically parse categorical and textual keys. The platform now natively renders clean whole integers for standard counting metrics like Games Played (GP) and a safe N/A status for players missing IDs; also eliminating floating-point layout bugs (0.00) entirely.
+* **Provisional Workload Baselines:** Recalibrated the bottom Career Summary row to output the cleanly rounded mathematical mean (averageGP) of match volume per active season rather than accumulating a massive total lifecycle sum.
 
 ## ❄️ Visual & Interface Design
-* **Cyberspace Network Background:** Implemented an animated high-tech geometric drift with terminal pulse effects. 
-* **Mobile Resilience:** Removed all fixed-width constraints. The portal now fluidly stacks cards for a native-app feel on iOS and Android without requiring "Desktop Site" mode.
-* **Interactive Stat Cards:** Refined the "Expand" logic to desktop-only to preserve mobile layout integrity.
-* **Export Engine:** Repositioned the **Export PNG** system to the primary Player Sync card for faster scouting reports and social sharing.
+* **Elastic Versus Topology:** Reconfigured the rigid comparison matrix grid layout with dynamic percentage weighting. When the Reference Average (Ref) column is toggled, player header blocks intelligently narrow space without breaking layout rows.
+* **Mobile-Fluid Timelines:** Wrapped the Career Performance Journey SVG in a swipe-friendly, touch-responsive horizontal scroll track for mobile users. Line charts and season nodes retain perfect canvas proportions on mobile browsers without squishing or shrinking.
+* **Refined Card Radii:** Softened the outer profile borders to a sharp, cohesive desktop asset block standard for graph and table sections.
 
 ## 🔧 Technical Fixes
-* **Legacy Data Integrity:** Resolved ID mismatch conflicts in Season 09 and Season 10 data rows.
-* **OVR Calibration:** Adjusted the OVR scaling curve to more accurately represent elite performers in Diamond and Champion tiers.
-* **Mobile UI Clipping:** Fixed right-side cutoffs in the About and Versus tabs.
-* **Global Layout:** Standardized `box-border` and `w-full` logic across all primary navigation containers.
+* **Database Structural Cleansing:** Completely eliminated historical "ghost rows" across legacy spreadsheets (0 GP records with empty performance commas), preventing artificial inflation of players' active season counts.
+* **Integer Formatting Locks:** Inserted a hard Math.floor(parseFloat()) processing pipeline for Games Played variables, successfully stripping legacy floating-point decimals (2.0, 14.0) inherited from old Excel database trackers -- particularly Season 11. (More database tweaks/fixes to come...)
 * Site bug fixes and more...
 
 ---

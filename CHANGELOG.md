@@ -1,26 +1,35 @@
-# 🎯 v.2026.5.19 | UI Elasticity & Integrity Update
+# 🔍 v.2026.6.23 | Scouting Simulator Update
 
 ### "The seasons always change, but the data remains." ❄️💙
 
-This release delivers critical enhancements to the core layout mechanics and data-ingestion pipeline of the RSC Intelligence Portal. Focusing heavily on layout elasticity, mobile chart fluidity, and rigorous data-cleansing, the UI Elasticity & Integrity update ensures your scouting telemetry remains razor-sharp, stable, and visually perfect across any viewport.
+This major release completely transforms the Scouting Tab from a static overview sheet into an immersive, theme-reactive contract evaluation engine. Built specifically for General Managers and team analysts, the Scouting Simulator Update delivers deep roster indexing, precise cost-efficiency metrics, and granular performance simulation directly to your draft strategy workspace.
 
 ---
+
+## 🔥 Main New Features
+* **Deep Directory Search:** The "Search Active Rosters" input bar has been re-engineered. Scouts can now simultaneously query by Player Name, Team Name, or Franchise name (e.g., searching "Wobbegongs" or "Shark Attack" dynamically filters full active squads).
+* **Visual Franchise Branding:** Added live franchise shield logo assets directly inline within the scouting directory table rows for instant organizational tracking at a glance.
+* **Theme-Reactive Interface Aura:** Embedded a subtle, localized color-glow backdrop and tinted control headers across the scouting panel that dynamically shift color palettes to match the active signature hex of the selected competitive tier.
+* **Hybrid Manual-Slider Simulators:** Introduced the OVR Simulator with a precise dual-input mechanism, allowing scouts to type values manually alongside high-density 0.05 increments.
+* **Granular Value-Differential Sorting:** Implemented an instant sorting lock system over the Player header that evaluates dynamic contract surpluses from biggest bargain steals right down to roster deficits.
 
 ## 📈 Analytical & Data Improvements
-* **Chronological Recency Caps:** Overhauled the core calculateOVR engine to implement a 4-season maximum tracking window anchored to a player's latest active season. Vintage stats from older eras are safely ignored, ensuring OVR values reflect current competitive form.
-* **Intelligent Data Fallbacks:** Upgraded the getStat dictionary engine to automatically parse categorical and textual keys. The platform now natively renders clean whole integers for standard counting metrics like Games Played (GP) and a safe N/A status for players missing IDs; also eliminating floating-point layout bugs (0.00) entirely.
-* **Provisional Workload Baselines:** Recalibrated the bottom Career Summary row to output the cleanly rounded mathematical mean (averageGP) of match volume per active season rather than accumulating a massive total lifecycle sum.
+* **Locked Mathematical Integers:** Stripped all legacy floating-point decimals from the row-level Overall Ratings (OVR), guaranteeing a clean whole-number presentation across the main profile grids and scouting spreadsheets.
+* **Dynamic OLS Telemetry Extensions:** Passed team and franchise string properties entirely through the browser-memory data processing pipe, allowing live telemetry-insight models to run cost-value regressions across fully populated organizational rosters.
+* **Strict Sample Floor Isolation:** Calibrated the sorting mechanics to isolate low-sample anomalies; players with fewer than 5 matches played are automatically pushed to a calculation floor to avoid value flukes.
 
 ## ❄️ Visual & Interface Design
-* **Elastic Versus Topology:** Reconfigured the rigid comparison matrix grid layout with dynamic percentage weighting. When the Reference Average (Ref) column is toggled, player header blocks intelligently narrow space without breaking layout rows.
-* **Mobile-Fluid Timelines:** Wrapped the Career Performance Journey SVG in a swipe-friendly, touch-responsive horizontal scroll track for mobile users. Line charts and season nodes retain perfect canvas proportions on mobile browsers without squishing or shrinking.
-* **Refined Card Radii:** Softened the outer profile borders to a sharp, cohesive desktop asset block standard for graph and table sections.
+* **Tier-Branded Roster Tooltips:** Integrated an interactive hover element over signed players. Hovering over a line item reveals an absolute popup displaying their parent Franchise and Team names, styled with the active tier's competitive color code.
+* **Filename Asset Mapping:** Appended a punctuation-scrubbing regex parser to asset image pathing to automatically drop special characters (like apostrophes or periods). Logos for franchises like *The King's Court* and *Shell Corp.* now resolve flawlessly.
+* **Mobile Axis Elasticity:** Stabilized mobile viewport clipping by modernizing the main navigation element into a horizontally responsive, swipe-friendly horizontal scroll track with touch-pan flags.
 
 ## 🔧 Technical Fixes
-* **Database Structural Cleansing:** Completely eliminated historical "ghost rows" across legacy spreadsheets (0 GP records with empty performance commas), preventing artificial inflation of players' active season counts.
-* **Integer Formatting Locks:** Inserted a hard Math.floor(parseFloat()) processing pipeline for Games Played variables, successfully stripping legacy floating-point decimals (2.0, 14.0) inherited from old Excel database trackers -- particularly Season 11. (More database tweaks/fixes to come...)
-* Site bug fixes and more...
+* Fixed data from seasons 7, 8, and 11! Yay, finally!
+* Fixed a data-drop bug inside `processScoutingData` where organization strings were being discarded during the initial spreadsheet join pipeline.
+* Resolved a browser rendering bottleneck where default range input tracks overrode custom hexadecimal accent colors.
 
 ---
+
+[Visit the Live Portal: rscmycareer.com](https://rscmycareer.com/)
 
 **Developed by iSilently** *In Dedication to the Rocket Soccar Confederation Community*

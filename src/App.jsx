@@ -1,19 +1,20 @@
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Papa from 'papaparse';
 import { toPng } from 'html-to-image';
 import { getStat } from './mappings';
+import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 
 // --- 1. HELPERS: COLORS, GRADIENTS, & TIER LOGIC ---
 
+// Car bodies updated as of June 23, 2026
 const rlCars = [
   "007's Aston Martin DB5",
   "007's Aston Martin DBS",
   "007's Aston Martin Valhalla",
   "1966 Cadillac DeVille",
   "1999 Nissan Skyline GT-R R34",
-  "89 Batmobile",
   "Ace",
   "Admiral",
   "Aftershock",
@@ -109,6 +110,7 @@ const rlCars = [
   "Insidio",
   "Jackal",
   "Jeep Wrangler",
+  "Jeep Wrangler Rubicon",
   "Jurassic Jeep Wrangler",
   "Jäger 619",
   "K.I.T.T.",
@@ -149,6 +151,7 @@ const rlCars = [
   "Mudcat G1",
   "Mudcat GXT",
   "NASCAR Chevrolet Camaro",
+  "NASCAR Next Gen Chevrolet Camaro",
   "NASCAR Next Gen Ford Mustang",
   "NASCAR Next Gen Toyota Camry",
   "Nemesis",
@@ -177,7 +180,7 @@ const rlCars = [
   "Primo",
   "Proteus",
   "Psyclops",
-  "Quadra Turbo-R",
+  "Quadra V-Tech",
   "R3MX",
   "R3MX GXT",
   "Ram 1500 RHO",
@@ -324,6 +327,63 @@ const getTierColor = (tierName) => {
   return tierColors[cleanTier] || '#94a3b8';
 };
 
+// RSC TIER BOUNDS REFERENCE (as of season 26)
+const TIER_MMR_BOUNDS = {
+  'Premier': { min: 1780, max: 2040 },
+  'Master': { min: 1660, max: 1775 },
+  'Elite': { min: 1540, max: 1655 },
+  'Veteran': { min: 1445, max: 1535 },
+  'Rival': { min: 1340, max: 1440 },
+  'Challenger': { min: 1225, max: 1335 },
+  'Prospect': { min: 1100, max: 1220 },
+  'Contender': { min: 930, max: 1095 },
+  'Amateur': { min: 750, max: 925 }
+};
+
+export const processScoutingData = (statsData, contractsData) => {
+  const contractsMap = {};
+  contractsData.forEach(c => {
+    const nameKey = (c['Player Name'] || '').trim().toLowerCase();
+    contractsMap[nameKey] = {
+      mmr: parseInt(c['Current MMR']) || 0,
+      rawStatus: c['Contract Status'] || 'Unknown',
+      franchise: c['Franchise'] || '',
+      team: c['Team'] || ''
+    };
+  });
+
+  return statsData.map(player => {
+    const nameKey = (player['Player Name'] || '').trim().toLowerCase();
+    const contractInfo = contractsMap[nameKey] || { mmr: 0, rawStatus: 'Retired', franchise: '', team: '' };
+
+    let status = 'Retired';
+    const raw = contractInfo.rawStatus.toLowerCase();
+    if (['rostered', 'waivers', 'inactive reserve', 'renewed'].includes(raw)) status = 'SIGNED';
+    else if (raw.includes('permanent free agent') || raw.includes('perm fa')) status = 'Perm FA';
+    else if (raw.includes('free agent') || raw === 'fa') status = 'Free Agent';
+
+    return {
+      name: player['Player Name'],
+      tier: player['Tier'],
+      mmr: contractInfo.mmr,
+      status: status,
+      // ACCESSIBLE OBJECT PROPERTIES INJECTION
+      franchise: contractInfo.franchise || player['Franchise(s)'] || 'Free Agent',
+      team: contractInfo.team || player['Team(s)'] || 'FA',
+      gp: parseInt(player['GP']) || 0,
+      sbv: parseFloat(player['SBV']) || 0,
+      ovr: parseInt(player['OVR']) || 50,
+      ppg: parseFloat(player['PPG']) || 0.0,
+      gpg: parseFloat(player['GPG']) || 0.0,
+      apg: parseFloat(player['APG']) || 0.0,
+      svpg: parseFloat(player['SvPG']) || 0.0,
+      shpg: parseFloat(player['ShPG']) || 0.0,
+      shPct: parseFloat(player['Sh%']) || 0.0,
+      winPct: parseFloat(player['W%']) || 0.0
+    };
+  });
+};
+
 const normalizeId = (input) => {
   if (!input) return "";
   const digits = input.replace(/\D/g, "");
@@ -346,11 +406,16 @@ const formatShPct = (val) => {
 
 // --- 2. MAIN COMPONENT ---
 
-function App() {
+function AppContent() {
+
+  // Browser directory routing listeners
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [theme, setTheme] = useState('midnight'); // 'midnight' (current) or 'royal' (new)
 
-  const [activeTab, setActiveTab] = useState('profile'); // profile, versus, about
+  const activeTab = location.pathname === '/' ? 'profile' : location.pathname.substring(1);
+  const setActiveTab = (tabName) => navigate(tabName === 'profile' ? '/' : `/${tabName}`); // profile, versus, about
 
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -362,6 +427,16 @@ function App() {
   const [seasonsList, setSeasonsList] = useState([]);
 
   const [percentileScope, setPercentileScope] = useState('tier');
+
+  const [contractsData, setContractsData] = useState([]);
+
+  const calculateOvrFormula = (tier, stats) => {
+    const goalsWeight = parseFloat(stats.gpg || 0) * 14.5;
+    const assistsWeight = parseFloat(stats.apg || 0) * 11.2;
+    const savesWeight = parseFloat(stats.svpg || 0) * 9.4;
+    const winWeight = parseFloat(stats.winPct || 0) * 18.0;
+    return Math.min(99, Math.max(40, 45 + goalsWeight + assistsWeight + savesWeight + winWeight));
+  };
 
   // Profile States
   const [mainCar, setMainCar] = useState('Octane');
@@ -570,6 +645,15 @@ function App() {
           masterData = [...masterData, ...parsed.data.map(row => ({ ...row, seasonLabel: s }))];
         }
         setAllData(masterData);
+
+        const contractsRes = await fetch('/data/Contracts.csv');
+        const contractsText = await contractsRes.text();
+        const parsedContracts = Papa.parse(contractsText, { header: true, skipEmptyLines: true });
+        setContractsData(parsedContracts.data);
+        console.log("Stats Data Sample Row:", masterData[0]);
+        console.log("Contracts Data Sample Row:", parsedContracts.data[0]);
+        console.log("Unique Season Labels Loaded:", [...new Set(masterData.map(d => d.seasonLabel))]);
+
       } catch (err) { console.error(err); }
       setLoading(false);
     };
@@ -1043,8 +1127,8 @@ const downloadCard = () => {
         </div>
       </header>
 
-      <nav className="flex justify-center gap-12 mb-12 border-b border-white/5 pb-4 no-print">
-        {['profile', 'versus', 'about'].map((tab) => (
+      <nav className="flex md:justify-center gap-6 sm:gap-12 mb-12 border-b border-white/5 pb-4 no-print overflow-x-auto scrollbar-hide whitespace-nowrap px-4 max-w-full touch-pan-x">
+        {['profile', 'versus', 'scout', 'about'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -1655,123 +1739,252 @@ const downloadCard = () => {
 
             <div className="col-span-full">
               {playerHistory.length > 0 && (() => {
-                const data = getTrendData(); // Data is now Early -> Late
-                const width = 1000;
-                const height = 300;
-                const padding = 60;
+                // ALL RSC TIERS DICT REF v (Lowest to Highest)
+                const MASTER_TIERS = [
+                  "Amateur", "Contender", "Prospect", "Challenger", 
+                  "Rival", "Veteran", "Elite", "Master", "Premier"
+                ];
 
-                const getX = (i) => padding + (i * (width - 2 * padding) / (data.length - 1));
-                const getY = (sbv) => {
-                  const min = -50;
-                  const max = 150;
-                  const percentage = (sbv - min) / (max - min);
-                  return (height - padding) - (percentage * (height - 2 * padding));
+                const normalizeTierIndex = (tierStr) => {
+                  let name = (tierStr || '').split('\n').pop().trim();
+                  if (name === "Major") name = "Veteran";
+                  if (name === "Minor") name = "Rival";
+                  return MASTER_TIERS.indexOf(name);
+                };
+
+                const seasonsMap = {};
+
+                playerHistory.forEach(row => {
+                  const s = row.seasonLabel;
+                  if (!seasonsMap[s]) seasonsMap[s] = [];
+                  seasonsMap[s].push(row);
+                });
+
+                const data = Object.keys(seasonsMap).map(s => {
+                  const entries = seasonsMap[s];
+                  
+                  // Scan for the row containing the absolute highest game total volume for this season period
+                  const dominantEntry = entries.reduce((prev, current) => {
+                    return (parseInt(getStat(current, 'gp')) || 0) > (parseInt(getStat(prev, 'gp')) || 0) ? current : prev;
+                  });
+
+                  const totalGP = entries.reduce((acc, current) => acc + (parseInt(getStat(current, 'gp')) || 0), 0);
+                  
+                  const weightedSumSBV = entries.reduce((acc, current) => {
+                    return acc + ((parseFloat(getStat(current, 'sbv')) || 0) * (parseInt(getStat(current, 'gp')) || 0));
+                  }, 0);
+                  const finalCalculatedSBV = totalGP > 0 ? weightedSumSBV / totalGP : 0;
+                  
+                  const dominantTierIndex = normalizeTierIndex(getStat(dominantEntry, 'tier'));
+                  const globalY = (dominantTierIndex !== -1 ? dominantTierIndex * 100 : 0) + finalCalculatedSBV;
+
+                  return {
+                    season: s,
+                    tier: getStat(dominantEntry, 'tier').split('\n').pop().trim(),
+                    tierIndex: dominantTierIndex,
+                    sbv: finalCalculatedSBV,
+                    gp: totalGP,
+                    globalY
+                  };
+                }).reverse();
+
+                const activeIndices = data.map(p => p.tierIndex).filter(idx => idx !== -1);
+                const minPlayerIdx = Math.min(...activeIndices);
+                const maxPlayerIdx = Math.max(...activeIndices);
+
+                const minVisibleIdx = Math.max(0, minPlayerIdx - 1);
+                const chartFloorY = minVisibleIdx === minPlayerIdx ? minVisibleIdx * 100 : (minVisibleIdx * 100) + 50;
+
+                const maxVisibleIdx = Math.min(MASTER_TIERS.length - 1, maxPlayerIdx + 1);
+                const chartCeilingY = maxVisibleIdx === maxPlayerIdx ? (maxVisibleIdx * 100) + 100 : (maxVisibleIdx * 100) + 50;
+                const visibleTiers = [];
+                for (let i = minVisibleIdx; i <= maxVisibleIdx; i++) {
+                  visibleTiers.push({ index: i, name: MASTER_TIERS[i] });
+                }
+
+                // SVG DIMENSIONS (SET -- MIN EDIT -- WARG)
+                const width = 1000;
+                const height = 400;
+                const paddingLeft = 110;
+                const paddingRight = 40;
+                const paddingTop = 40;
+                const paddingBottom = 50;
+
+                const chartWidth = width - paddingLeft - paddingRight;
+                const chartHeight = height - paddingTop - paddingBottom;
+
+                const getX = (i) => paddingLeft + (i * chartWidth / (data.length - 1 || 1));
+                const getY = (globalY) => {
+                  const totalRange = chartCeilingY - chartFloorY;
+                  const percentage = (globalY - chartFloorY) / (totalRange || 1);
+                  const boundedPercentage = Math.max(-0.05, Math.min(1.05, percentage));
+                  return (height - paddingBottom) - (boundedPercentage * chartHeight);
                 };
 
                 return (
                   <div className={`max-w-[95%] mx-auto mt-12 p-4 sm:p-6 md:p-10 rounded-3xl no-print mb-20 shadow-2xl transition-all duration-1000 border ${theme === 'royal' ? 'bg-black/40 border-white/10' : 'bg-slate-900/50 border-white/5'}`}>
-                  {/* Header Section: Stacked on mobile, split row on desktop */}
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-6 md:mb-10 text-center sm:text-left">
-                    <h3 className="text-xs md:text-[14px] font-black uppercase text-yellow-500 tracking-[0.3em] italic">
-                      Career Performance Journey
-                    </h3>
-                    <div className="flex gap-4">
-                      <span className="text-[10px] md:text-[14px] font-bold text-white uppercase opacity-60 md:opacity-100">Range: -50 to 150 SBV</span>
+                    
+                    {/* Header Section */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-6 md:mb-10 text-center sm:text-left">
+                      <div>
+                        <h3 className="text-xs md:text-[14px] font-black uppercase text-yellow-500 tracking-[0.3em] italic">
+                          Career Performance Journey
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider mt-1">
+                          * = Less Than 20 Games Played
+                        </p>
+                      </div>
+                      <div className="flex gap-4">
+                        <span className="text-[10px] md:text-[12px] font-mono font-bold text-slate-400 uppercase">
+                          Scale Context: 0 - 100 SBV Limits Per Tier
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  {/* Scroll Container: Prevents the graph from turning into an unreadable squished sliver on phones */}
-                  <div className="w-full overflow-x-auto scrollbar-hide touch-pan-x">
-                    {/* Setting a min-width ensures a guaranteed smooth canvas aspect ratio for swiping on portrait layouts */}
-                    <div className="relative w-full min-w-[650px] md:min-w-full">
-                      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-                        {/* Y-Axis Grid Lines */}
-                        {[0, 50, 100, 150].map(val => (
-                          <g key={val}>
-                            <line x1={padding} y1={getY(val)} x2={width - padding} y2={getY(val)} stroke="white" strokeOpacity="0.05" strokeDasharray="4" />
-                            <text 
-                              x={padding - 20} y={getY(val) + 4} 
-                              fill={theme === 'royal' ? '#60a5fa' : '#475569'} 
-                              fontSize="11" 
-                              textAnchor="end" 
-                              fontWeight="900"
-                              className="transition-colors duration-1000"
-                            >
-                              {val}
-                            </text>
-                          </g>
-                        ))}
+                    
+                    {/* Scroll Container -- Helps Mobile Responsiveness :0 */}
+                    <div className="w-full overflow-x-auto scrollbar-hide touch-pan-x">
+                      <div className="relative w-full min-w-[750px] md:min-w-full">
+                        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                          
+                          {visibleTiers.map((tier) => {
+                            const tierFloorPixelY = getY(tier.index * 100);
+                            const tierCeilingPixelY = getY((tier.index + 1) * 100);
+                            
+                            const finalTop = Math.max(paddingTop, tierCeilingPixelY);
+                            const finalBottom = Math.min(height - paddingBottom, tierFloorPixelY);
+                            const blockHeight = finalBottom - finalTop;
 
-                        {/* Chronological Segmented Lines */}
-                        {data.map((point, i) => {
-                          if (i === 0) return null;
-                          const prev = data[i - 1];
-                          return (
-                            <g key={i}>
-                              {/* The Glow (Outer Line) */}
-                              <line 
-                                x1={getX(i - 1)} y1={getY(prev.sbv)}
-                                x2={getX(i)} y2={getY(point.sbv)}
-                                stroke={getTierColor(prev.tier)}
-                                strokeWidth="12"
-                                strokeLinecap="round"
-                                opacity={prev.gp < 20 ? "0.05" : "0.15"}
-                                className="blur-md transition-all duration-700"
-                              />
-                              {/* The Core (Inner Line) */}
-                              <line 
-                                x1={getX(i - 1)} y1={getY(prev.sbv)}
-                                x2={getX(i)} y2={getY(point.sbv)}
-                                stroke={getTierColor(prev.tier)}
-                                strokeWidth="4"
-                                strokeLinecap="round"
-                                opacity={prev.gp < 20 ? "0.2" : "1"}
-                                className="transition-all duration-500"
-                              />
-                            </g>
-                          );
-                        })}
+                            if (blockHeight <= 0) return null;
+                            const currentTierColor = getTierColor(tier.name);
 
-                        {/* Season Nodes */}
-                        {data.map((point, i) => (
-                          <g key={i} className="group/node">
-                            <circle 
-                              cx={getX(i)} cy={getY(point.sbv)} r="6" 
-                              fill={getTierColor(point.tier)} 
-                              className={`transition-all duration-300 group-hover/node:r-8 stroke-[#03050a] stroke-[3px] 
-                                ${point.gp < 20 ? 'opacity-40' : 'opacity-100'}`}
-                            />
-                            {/* Tooltip */}
-                            <g className="opacity-0 group-hover/node:opacity-100 transition-opacity pointer-events-none">
-                              <rect 
-                                x={getX(i) - 50} y={getY(point.sbv) - 55} 
-                                width="100" height="35" rx="12" 
-                                fill="#03050a" 
-                                stroke={getTierColor(point.tier)} 
-                                strokeWidth="2" 
+                            return (
+                              <g key={tier.index}>
+                                <rect
+                                  x={paddingLeft}
+                                  y={finalTop}
+                                  width={chartWidth}
+                                  height={blockHeight}
+                                  fill={currentTierColor}
+                                  fillOpacity="0.03"
+                                />
+                                
+                                {/* 0 SBV Floor Marker */}
+                                <line 
+                                  x1={paddingLeft} 
+                                  y1={tierFloorPixelY} 
+                                  x2={width - paddingRight} 
+                                  y2={tierFloorPixelY} 
+                                  stroke={currentTierColor} 
+                                  strokeOpacity="0.35"
+                                  strokeWidth="1.5"
+                                />
+
+                                {/* 100 SBV Ceiling Marker */}
+                                <line 
+                                  x1={paddingLeft} 
+                                  y1={tierCeilingPixelY} 
+                                  x2={width - paddingRight} 
+                                  y2={tierCeilingPixelY} 
+                                  stroke={currentTierColor} 
+                                  strokeOpacity="0.1" 
+                                  strokeWidth="1"
+                                  strokeDasharray="4 4"
+                                />
+
+                                {/* Left-Hand Axis Typography Label */}
+                                <text
+                                  x={paddingLeft - 20}
+                                  y={finalTop + (blockHeight / 2) + 4}
+                                  fill={currentTierColor}
+                                  fontSize="10"
+                                  textAnchor="end"
+                                  fontWeight="900"
+                                  className="uppercase tracking-wider font-mono opacity-90 italic"
+                                >
+                                  {tier.name}
+                                </text>
+                              </g>
+                            );
+                          })}
+
+                          {/* --- CHRONOLOGICAL SEGMENTED TREND LINES --- */}
+                          {data.map((point, i) => {
+                            if (i === 0) return null;
+                            const prev = data[i - 1];
+                            
+                            return (
+                              <g key={i}>
+                                {/* Glow Backing */}
+                                <line 
+                                  x1={getX(i - 1)} y1={getY(prev.globalY)}
+                                  x2={getX(i)} y2={getY(point.globalY)}
+                                  stroke={getTierColor(prev.tier)}
+                                  strokeWidth="10"
+                                  strokeLinecap="round"
+                                  opacity={prev.gp < 20 ? "0.04" : "0.15"}
+                                  className="blur-sm transition-all duration-700"
+                                />
+                                {/* Core Line Segment */}
+                                <line 
+                                  x1={getX(i - 1)} y1={getY(prev.globalY)}
+                                  x2={getX(i)} y2={getY(point.globalY)}
+                                  stroke={getTierColor(prev.tier)}
+                                  strokeWidth="3.5"
+                                  strokeLinecap="round"
+                                  opacity={prev.gp < 20 ? "0.2" : "1"}
+                                  className="transition-all duration-500"
+                                />
+                              </g>
+                            );
+                          })}
+
+                          {/* --- DATA NODE ANCHOR POINTS & OVERLAY TOOLTIPS --- */}
+                          {data.map((point, i) => (
+                            <g key={i} className="group/node">
+                              {/* Outer Cursor Tracker ring */}
+                              <circle 
+                                cx={getX(i)} cy={getY(point.globalY)} r="5" 
+                                fill={getTierColor(point.tier)} 
+                                className={`transition-all duration-300 group-hover/node:r-7 stroke-[#0a0f1d] stroke-[2px] 
+                                  ${point.gp < 20 ? 'opacity-40' : 'opacity-100'}`}
                               />
-                              <text x={getX(i)} y={getY(point.sbv) - 33} fill="white" fontSize="11" textAnchor="middle" fontWeight="black" className="italic">
-                                {point.sbv.toFixed(1)} <tspan fill={getTierColor(point.tier)}>SBV</tspan>
-                                {point.gp < 20 ? ' *' : ''}
+                              
+                              {/* Rich Floating Tooltip Block */}
+                              <g className="opacity-0 group-hover/node:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                                <rect 
+                                  x={getX(i) - 60} y={getY(point.globalY) - 60} 
+                                  width="120" height="46" rx="8" 
+                                  fill="#0a0f1d" 
+                                  stroke={getTierColor(point.tier)} 
+                                  strokeWidth="1.5" 
+                                />
+                                <text x={getX(i)} y={getY(point.globalY) - 44} fill="white" fontSize="10" textAnchor="middle" fontWeight="900" className="uppercase font-mono tracking-wider">
+                                  {point.tier}
+                                </text>
+                                {/* FIXED SBV STRING FORMATTING: NO SIGN PREF_FIX FOR POSITIVES, FORCED 2-DECIMAL PLACES */}
+                                <text x={getX(i)} y={getY(point.globalY) - 26} fill="white" fontSize="11" textAnchor="middle" fontWeight="bold" className="font-mono">
+                                  {point.sbv.toFixed(2)} <tspan fill={getTierColor(point.tier)}>SBV</tspan>
+                                  {point.gp < 20 ? ' *' : ''}
+                                </text>
+                              </g>
+
+                              {/* Bottom Horizontal Timeline Axis Labels */}
+                              <text 
+                                x={getX(i)} y={height - 10} 
+                                fill={theme === 'royal' ? '#94a3b8' : '#64748b'} 
+                                fontSize="11" 
+                                textAnchor="middle" 
+                                fontWeight="900" 
+                                className="uppercase italic tracking-widest transition-colors duration-1000 font-mono"
+                              >
+                                {point.season}
                               </text>
                             </g>
-                            {/* Bottom Labels */}
-                            <text 
-                              x={getX(i)} y={height - 5} 
-                              fill={theme === 'royal' ? '#94a3b8' : '#64748b'} 
-                              fontSize="12" 
-                              textAnchor="middle" 
-                              fontWeight="900" 
-                              className="uppercase italic tracking-widest transition-colors duration-1000"
-                            >
-                              {point.season}
-                            </text>
-                          </g>
-                        ))}
-                      </svg>
+                          ))}
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
                 );
               })()}
             </div>
@@ -2026,7 +2239,7 @@ const downloadCard = () => {
                   ? calculateOVR(p.history) 
                   : calculateOVR([displayRow]);
 
-                const franchiseName = getStat(displayRow, 'franchise').split('\n').pop().trim();
+                const franchiseName = getStat(displayRow, 'franchise').split('\n').pop().trim().replace(/[^a-zA-Z0-9\s]/g, '');
                 const tierName = getStat(displayRow, 'tier').split('\n').pop().trim();
 
                 return (
@@ -2352,6 +2565,16 @@ const downloadCard = () => {
           </div>
         )}
 
+        {activeTab === 'scout' && (
+          <div className="col-span-full animate-in fade-in duration-500">
+            <ScoutingTab 
+              statsData={allData.filter(d => d.seasonLabel === 'S26')} // Filters metrics directly to current season
+              contractsData={contractsData}
+              calculateOvrFormula={calculateOvrFormula}
+            />
+          </div>
+        )}
+
         {activeTab === 'about' && (
           <div className="w-full col-span-4 max-w-4xl mx-auto space-y-8 md:space-y-12 py-6 md:py-10 px-2 sm:px-4 md:px-0 animate-in fade-in duration-700 box-border overflow-x-hidden">
             
@@ -2365,7 +2588,7 @@ const downloadCard = () => {
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">In Dedication to the Rocket Soccar Confederation Community</p>
                 </div>
                 <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 no-print px-4">
-                  <a href="https://www.rocketsoccarconfederation.com/" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Website</a>
+                  <a href="https://www.rscna.com/" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Website</a>
                   <a href="https://discord.gg/rsc" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Discord</a>
                   <a href="https://x.com/rsconfederation" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">X / Twitter</a>
                   <a href="https://www.twitch.tv/rsc_na" target="_blank" className="text-yellow-400 hover:text-white transition-colors text-[10px] font-black uppercase tracking-widest border-b border-white/10 pb-1">Twitch</a>
@@ -2380,7 +2603,7 @@ const downloadCard = () => {
                   The Career OVR is a weighted measurement of a player's performance across their <span className="font-bold">top 3 qualified seasons</span>. 
                   A baseline of <span className="text-white font-bold">75 OVR</span> represents a standard rostered player (50 SBV). 
                   To reach the elusive <span className="text-white font-black italic [text-shadow:_0_0_20px_#fbbf24,_0_0_40px_#f59e0b] inline-block">99 OVR</span>, a player must maintain statistical 
-                  dominance in elite tiers over a sustained period.
+                  dominance in their tier(s) for 3 most recent qualified seasons.
                 </p>
             </section>
 
@@ -2586,7 +2809,7 @@ const downloadCard = () => {
               </div>
             </section>
 
-            {/* --- LATEST UPDATE LOG: v.2026.5.14 --- */}
+            {/* --- LATEST UPDATE LOG: v.2026.6.23 --- */}
             <section className="mt-12 mb-20 animate-in slide-in-from-bottom-8 duration-1000">
               <div className={`p-6 md:p-10 rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden ${theme === 'royal' ? 'bg-black/40' : 'bg-slate-900/50'}`}>
                 
@@ -2596,51 +2819,53 @@ const downloadCard = () => {
                     <h3 className="text-[11px] font-black uppercase text-yellow-500 mb-2 tracking-[0.3em]">System Intelligence Update</h3>
                     <div className="flex items-center gap-3">
                       <div className="px-3 py-1 bg-blue-500/20 border border-blue-500/40 rounded-full text-[10px] font-black text-blue-400">
-                        v.2026.5.14
+                        v.2026.6.23
                       </div>
-                      <span className="text-white font-black italic uppercase tracking-tighter text-xl">S26 Deadeye Overhaul</span>
+                      <span className="text-white font-black italic uppercase tracking-tighter text-xl">Scouting Simulator Update</span>
                     </div>
                     <p className="text-[12px] text-sky-300 mt-2 italic max-w-md">
-                      Welcoming the Next Generation of RSC! A massive system overhaul designed for the veterans of the past and the rookies of Season 26.
+                      Revolutionizing draft-room telemetry! Introducing multi-field franchise search lookup, custom tier aesthetics, and a granular typing slider simulator.
                     </p>
                   </div>
                   <div className="text-[9px] text-slate-500 font-bold uppercase tracking-widest md:text-right">
-                    Released: May 14, 2026 <br className="hidden md:block" /> Status: Stable Deployment
+                    Released: June 23, 2026 <br className="hidden md:block" /> Status: Stable Deployment
                   </div>
                 </div>
 
-                {/* The Changelog Grid */}
+                {/* Changelog Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                     <h4 className="text-[11px] font-black text-cyan-400 uppercase tracking-widest border-b border-white/5 pb-2">Analytical Upgrades</h4>
                     <ul className="space-y-3 text-[12px] text-slate-400 font-medium leading-relaxed italic">
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Integrated S26 Mid-Season Intelligence sheets.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> New Shooting % (Sh%) tracking on all Player Cards.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Implemented Weighted Career Average math for profile integrity.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Added Tier/League Average dynamic benchmarking in Versus mode.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Active search bar now deep-indexes players, teams, and franchises simultaneously.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Re-engineered the scouting sorting engine to rank by live contract value differentials.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Permanently stripped trailing floating decimals from scouting list OVR outputs.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Applied a strict 5-game sample floor to value badges to eliminate statistical anomalies.</li>
                     </ul>
                   </div>
 
                   <div className="space-y-4">
                     <h4 className="text-[11px] font-black text-blue-500 uppercase tracking-widest border-b border-white/5 pb-2">Interface & Logic</h4>
                     <ul className="space-y-3 text-[12px] text-slate-400 font-medium leading-relaxed italic">
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Deploying Cyberspace Network background with terminal flicker.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> New Identity Verification symbols (⊕) for name-change tracking.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Optimized Mobile UX: Auto-stacking cards & fixed cutoffs.</li>
-                      <li className="flex gap-3"><span className="text-blue-500">→</span> Resolved ID mismatch bugs in Legacy Season 09/10 data.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Scouting dashboard modules now feature ambient glow accents that match the selected tier's color.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Integrated inline franchise shield graphics and responsive team lookups on hover.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Added granular manual typing input boxes directly adjacent to the simulator sliders.</li>
+                      <li className="flex gap-3"><span className="text-blue-500">→</span> Upgraded mobile header elements with swipe-responsive horizontal scroll layout tracks.</li>
                     </ul>
                   </div>
                 </div>
 
                 {/* Bottom CTA for full technical log */}
                 <div className="mt-10 pt-6 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest italic">
-                    * Career OVR recalibrated for current tier standards.
-                  </p>
+                  <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest italic space-y-1">
+                    <p>* Core dataset scrub fixed historical spreadsheet structures from seasons 7, 8, and 11.</p>
+                    <p>* Asset loading paths strip punctuation marks from file names automatically.</p>
+                  </div>
                   <a 
-                    href="https://github.com/Silent-Alchemist/rsc-career-portal/releases/tag/v2026.5.14" 
+                    href="https://github.com/Silent-Alchemist/rsc-career-portal/releases/tag/v2026.6.23" 
                     target="_blank" 
-                    className="text-[10px] font-black text-slate-400 hover:text-white transition-all uppercase tracking-[0.3em] flex items-center gap-2 group"
+                    rel="noreferrer"
+                    className="text-[10px] font-black text-slate-400 hover:text-white transition-all uppercase tracking-[0.3em] flex items-center gap-2 group h-fit self-end"
                   >
                     View Full Technical Log 
                     <span className="group-hover:translate-x-1 transition-transform">→</span>
@@ -2657,13 +2882,484 @@ const downloadCard = () => {
       {/* --- v.YYYY.MM.D --- */}
       <div className="fixed bottom-4 right-6 no-print pointer-events-none z-[100]">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 opacity-30">
-          v.2026.5.14
+          v.2026.6.23
         </p>
       </div>
 
       <Analytics />
       <SpeedInsights />
     </div>
+  );
+}
+
+/* --- SCOUT TAB FUNCTION APP --- */
+
+function ScoutingTab({ statsData, contractsData, calculateOvrFormula }) {
+  const [selectedTier, setSelectedTier] = useState('Premier');
+  
+  const [mmrRange, setMmrRange] = useState([1780, 2040]);
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const [sortBy, setSortBy] = useState('sbv');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [simStats, setSimStats] = useState({ gpg: 1.0, apg: 0.6, svpg: 1.2, shpg: 3.0, winPct: 0.50 });
+
+  const combinedMasterList = useMemo(() => {
+    const rawJoined = processScoutingData(statsData, contractsData);
+
+    const validPeers = rawJoined.filter(p => p.mmr > 0 && p.gp > 0);
+    let m = 0, b = 50;
+    if (validPeers.length >= 2) {
+      const n = validPeers.length;
+      let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+      validPeers.forEach(p => {
+        sumX += p.mmr; sumY += p.sbv; sumXY += (p.mmr * p.sbv); sumXX += (p.mmr * p.mmr);
+      });
+      const num = (n * sumXY) - (sumX * sumY);
+      const den = (n * sumXX) - (sumX * sumX);
+      m = den !== 0 ? num / den : 0;
+      b = (sumY - (m * sumX)) / n;
+    }
+    
+    // Calculate the accurate historical OVR for every single player row using their S26 stats
+    return rawJoined.map(player => {
+      let weightedSBV = player.sbv;
+      let rawOvr;
+
+      if (weightedSBV < 0) {
+        // NEGATIVE SBV ZONE: For every 5 SBV below 0, drop 1 OVR from the 50 base.
+        rawOvr = 50 + (weightedSBV / 5); 
+      } else if (weightedSBV <= 50) {
+        // STANDARD SBV ZONE: 0 to 50 SBV scales from 50 to 75 OVR.
+        rawOvr = 50 + (weightedSBV * 0.5);
+      } else {
+        // ELITE SBV ZONE: 50+ SBV scales towards 99 OVRs.
+        rawOvr = 75 + ((weightedSBV - 50) * 0.48);
+      }
+
+      let expected = (m * player.mmr) + b;
+      if (player.mmr === 0) expected = 50;
+
+      const trueDiff = player.gp >= 5 ? parseFloat((player.sbv - expected).toFixed(1)) : -9999;
+
+      // Absolute floor of 40 OVR and cap at 99 OVR.
+      const calculatedRowOvr = Math.min(99, Math.max(40, Math.round(rawOvr))); // Min-max
+
+      return {
+        ...player,
+        ovr: calculatedRowOvr,
+        valueDiff: trueDiff
+      };
+    });
+  }, [statsData, contractsData]);
+
+  const telemetryInsight = useMemo(() => {
+    const validPeers = combinedMasterList.filter(p => p.tier === selectedTier && p.mmr > 0 && p.gp > 0);
+    if (validPeers.length < 2) return { hasBaseline: false, avgMmr: 0, avgSbv: 0 };
+
+    const n = validPeers.length;
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    validPeers.forEach(p => {
+      sumX += p.mmr; sumY += p.sbv; sumXY += (p.mmr * p.sbv); sumXX += (p.mmr * p.mmr);
+    });
+
+    const num = (n * sumXY) - (sumX * sumY);
+    const den = (n * sumXX) - (sumX * sumX);
+    const m = den !== 0 ? num / den : 0;
+    const b = (sumY - (m * sumX)) / n;
+
+    return {
+      hasBaseline: true,
+      avgMmr: Math.round(sumX / n),
+      avgSbv: (sumY / n).toFixed(2),
+      calculateExpectedSbv: (mmr) => (m * mmr) + b
+    };
+  }, [combinedMasterList, selectedTier]);
+
+  const filteredPlayers = useMemo(() => {
+    return combinedMasterList.filter(player => {
+      if (player.tier !== selectedTier) return false;
+      if (player.mmr < mmrRange[0] || player.mmr > mmrRange[1]) return false;
+      if (statusFilter !== 'ALL' && player.status !== statusFilter) return false;
+      
+      // MULTI-FIELD SEARCH (TEAMS/PLAYERS/FRANCHISES QUERY)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesName = player.name.toLowerCase().includes(query);
+        const matchesTeam = (player.team || '').toLowerCase().includes(query);
+        const matchesFranchise = (player.franchise || '').toLowerCase().includes(query);
+        if (!matchesName && !matchesTeam && !matchesFranchise) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      let valA = a[sortBy]; let valB = b[sortBy];
+      if (typeof valA === 'string') return sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      return sortOrder === 'asc' ? valA - valB : valB - valA;
+    });
+  }, [combinedMasterList, selectedTier, mmrRange, statusFilter, searchQuery, sortBy, sortOrder]);
+
+  const paginatedPlayers = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredPlayers.slice(start, start + rowsPerPage);
+  }, [filteredPlayers, currentPage, rowsPerPage]);
+
+  const totalPages = Math.ceil(filteredPlayers.length / rowsPerPage) || 1;
+
+  const handleSort = (category) => {
+    if (sortBy === category) { setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc'); } 
+    else { setSortBy(category); setSortOrder('desc'); }
+    setCurrentPage(1);
+  };
+
+  const handleTierChange = (tierName) => {
+    setSelectedTier(tierName);
+    if (TIER_MMR_BOUNDS[tierName]) {
+      setMmrRange([TIER_MMR_BOUNDS[tierName].min, TIER_MMR_BOUNDS[tierName].max]);
+    }
+    setCurrentPage(1);
+  };
+
+  const calculatedSimOvr = useMemo(() => {
+    // Calculate an expected baseline SBV specifically for this exact tier's meta
+    // Re-map the raw slider values to an estimated weighted SBV that takes the tier baseline into account
+    // Align the simulated output with the active tier baseline ref
+    // Project the resulting tier-relative SBV onto your actual, definitive OVR scaling curves
+    const currentTierMin = TIER_MMR_BOUNDS[selectedTier]?.min || 1000;
+    const currentTierMax = TIER_MMR_BOUNDS[selectedTier]?.max || 1500;
+    const midPointMmr = (currentTierMin + currentTierMax) / 2;
+    
+    const baseExpectedSbv = telemetryInsight.hasBaseline 
+      ? telemetryInsight.calculateExpectedSbv(midPointMmr) 
+      : 50;
+
+    // Re-map
+    const simulatedWeightedSBV = (simStats.gpg * 22) + (simStats.apg * 18) + (simStats.svpg * 14) + ((simStats.winPct - 0.5) * 40);
+    
+    // Sim
+    const localizedSimSBV = baseExpectedSbv + (simulatedWeightedSBV - 45);
+
+    // Scale
+    let rawOvr;
+    if (localizedSimSBV < 0) {
+      rawOvr = 50 + (localizedSimSBV / 5); 
+    } else if (localizedSimSBV <= 50) {
+      rawOvr = 50 + (localizedSimSBV * 0.5);
+    } else {
+      rawOvr = 75 + ((localizedSimSBV - 50) * 0.48);
+    }
+
+    return Math.min(99, Math.max(40, Math.round(rawOvr)));
+  }, [selectedTier, simStats, telemetryInsight]);
+
+  return (
+    <div className="w-full relative group/scout-panel">
+      
+      {/* --- AMBIENT BACKGROUND GLOW CONTAINER --- */}
+      {/* --- NOTE TO SELF: EDIT PX (CURRENTLY 10PX) --- */}
+      <div 
+        className="absolute -inset-1 blur-[10px] rounded-[4rem] opacity-25 transition-all duration-700 ease-in-out pointer-events-none z-0 group-hover/scout-panel:opacity-35 animate-[pulse_6s_infinite]"
+        style={{ backgroundColor: getTierColor(selectedTier) }} 
+      />
+      {/* Scouting Interface */}
+      <div className="w-full grid grid-cols-1 xl:grid-cols-4 gap-8 p-4 sm:p-6 font-sans text-white bg-[#010205]/90 border border-white/10 rounded-[3rem] shadow-2xl relative z-10 backdrop-blur-xl">
+      <div className="xl:col-span-1 space-y-6">
+        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/5 space-y-4">
+        <h4 
+          className="text-xs font-black uppercase tracking-wider transition-colors duration-300"
+          style={{ color: getTierColor(selectedTier) }}
+        >
+          Salary / MMR Bracket Filters
+        </h4>
+        <div>
+          <label className="text-[11px] font-bold text-slate-400 uppercase">Target Competitive Tier</label>
+          <select 
+            value={selectedTier} 
+            onChange={(e) => handleTierChange(e.target.value)}
+            className="w-full mt-1.5 p-2.5 rounded-lg bg-slate-950 border border-white/10 text-xs font-mono font-black outline-none transition-all focus:border-opacity-100"
+            style={{ color: getTierColor(selectedTier), borderColor: `${getTierColor(selectedTier)}20` }} // Tints text option assets to match!
+          >
+            {['Premier', 'Master', 'Elite', 'Veteran', 'Rival', 'Challenger', 'Prospect', 'Contender', 'Amateur'].map(t => (
+              <option key={t} value={t} style={{ color: getTierColor(t) }}>{t.toUpperCase()}</option>
+            ))}
+          </select>
+        </div>
+          {/* --- DOUBLE CIRCLE OVERLAY CONTAINER OR SLIDER --- */}
+          <div>
+            <div className="flex justify-between text-[11px] font-bold text-slate-400 uppercase mb-1">
+              <span>MMR Scouting Window</span>
+              <span 
+                className="font-mono font-black transition-colors duration-300"
+                style={{ color: getTierColor(selectedTier) }} // Dynamic MMR Number Text Tint
+              >
+                {mmrRange[0]} - {mmrRange[1]}
+              </span>
+            </div>
+            
+            <div className="relative h-6 mt-4 flex items-center">
+              <div className="absolute left-0 right-0 h-1 bg-slate-950 rounded-lg pointer-events-none" />
+              {/* Floor Slider */}
+              <input
+                type="range"
+                min={TIER_MMR_BOUNDS[selectedTier]?.min || 500}
+                max={TIER_MMR_BOUNDS[selectedTier]?.max || 2000}
+                step="5"
+                value={mmrRange[0]}
+                onChange={(e) => {
+                  const val = Math.min(parseInt(e.target.value), mmrRange[1] - 5);
+                  setMmrRange([val, mmrRange[1]]);
+                  setCurrentPage(1);
+                }}
+                className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-cyan-500 z-30 dual-range-slider-thumb"
+                style={{ '--tier-thumb-color': getTierColor(selectedTier) }} // Passes the exact tier color hex to the CSS thumb
+              />
+
+              {/* Ceiling Slider */}
+              <input
+                type="range"
+                min={TIER_MMR_BOUNDS[selectedTier]?.min || 500}
+                max={TIER_MMR_BOUNDS[selectedTier]?.max || 2000}
+                step="5"
+                value={mmrRange[1]}
+                onChange={(e) => {
+                  const val = Math.max(parseInt(e.target.value), mmrRange[0] + 5);
+                  setMmrRange([mmrRange[0], val]);
+                  setCurrentPage(1);
+                }}
+                className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none accent-cyan-500 z-30 dual-range-slider-thumb"
+                style={{ '--tier-thumb-color': getTierColor(selectedTier) }} // Passes the exact tier color hex to the CSS thumb
+              />
+            </div>
+
+            <div className="flex justify-between text-[9px] font-mono font-bold text-slate-600 mt-1">
+              <span>MIN: {TIER_MMR_BOUNDS[selectedTier]?.min}</span>
+              <span>MAX: {TIER_MMR_BOUNDS[selectedTier]?.max}</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] font-bold text-slate-400 uppercase">Contract Classification</label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {['ALL', 'SIGNED', 'Free Agent', 'Permanent Free Agent'].map(status => (
+                <button
+                  key={status} onClick={() => { setStatusFilter(status); setCurrentPage(1); }}
+                  className={`px-2 py-1.5 rounded text-[10px] font-black uppercase tracking-tight transition-all border ${statusFilter === status ? 'bg-blue-500/20 border-blue-500 text-blue-300' : 'bg-slate-950 border-white/5 text-slate-400'}`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-slate-900/40 border border-white/5 space-y-4 relative overflow-hidden">
+          <h4 className="text-xs font-black uppercase tracking-wider transition-colors duration-300"
+            style={{ color: getTierColor(selectedTier) }} // Dynamic Simulator Card Title Tint
+          >
+            OVR Stat Simulator
+          </h4>
+          <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-white/5">
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Projected Ceiling</span>
+            <span className="text-2xl font-black italic font-mono text-yellow-500">{calculatedSimOvr}</span>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Goals Per Game', key: 'gpg', max: 3.0, step: 0.05 },
+              { label: 'Assists Per Game', key: 'apg', max: 2.0, step: 0.05 },
+              { label: 'Saves Per Game', key: 'svpg', max: 3.0, step: 0.05 },
+              { label: 'Shots Per Game', key: 'shpg', max: 6.0, step: 0.05 },
+              { label: 'Win Percentage', key: 'winPct', max: 1.0, step: 0.01, isPct: true }
+            ].map(slider => (
+              <div key={slider.key} className="space-y-1.5">
+              <div className="flex justify-between items-center text-[10px] font-bold font-mono text-slate-400">
+                <span>{slider.label.toUpperCase()}</span>
+                
+                {/* DYNAMIC HYBRID MANUAL TYPING INPUT FIELD */}
+                <input 
+                  type="number"
+                  min="0"
+                  max={slider.isPct ? 100 : slider.max}
+                  step={slider.isPct ? 1 : slider.step}
+                  value={slider.isPct ? Math.round(simStats[slider.key] * 100) : simStats[slider.key]}
+                  onChange={(e) => {
+                    let val = parseFloat(e.target.value) || 0;
+                    if (slider.isPct) {
+                      val = Math.min(100, Math.max(0, val)) / 100;
+                    } else {
+                      val = Math.min(slider.max, Math.max(0, val));
+                    }
+                    setSimStats(prev => ({ ...prev, [slider.key]: val }));
+                  }}
+                  className="w-14 px-1 py-0.5 bg-black/60 border border-white/10 rounded text-center text-white font-black font-mono focus:outline-none focus:border-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+              <input 
+                type="range" 
+                min="0" 
+                max={slider.max} 
+                step={slider.step} 
+                value={simStats[slider.key]}
+                onChange={(e) => setSimStats(prev => ({ ...prev, [slider.key]: parseFloat(e.target.value) }))}
+                className="w-full accent-blue-500 h-1 rounded-lg bg-slate-950"
+              />
+            </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="xl:col-span-3 space-y-4">
+        <div className="p-4 rounded-xl bg-blue-950/20 border border-blue-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+          <p className="text-xs text-slate-400 leading-relaxed italic">
+            💡 <span className="font-bold text-white uppercase not-italic font-mono text-[11px] tracking-wider">Scout Value Intelligence:</span> Baseline trends calculate a true proportional expectation model for each point of MMR inside {selectedTier}. High positive SBV value indicates that player is playing at a level much higher than what a player with their MMR is expected to.
+          </p>
+          <input 
+            type="text" placeholder="SEARCH S26 ROSTERS..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            className="p-2 bg-slate-950 border border-white/10 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-cyan-500 w-full md:w-64 uppercase"
+          />
+        </div>
+
+        <div className="w-full overflow-x-auto border border-white/5 rounded-2xl bg-slate-900/20">
+          <div className="min-w-[1000px]">
+            <div className="grid grid-cols-12 bg-slate-950/80 p-4 border-b border-white/5 text-[11px] font-black text-slate-400 uppercase tracking-wider font-mono cursor-pointer select-none">
+              <div className="col-span-2 flex items-center gap-2 cursor-pointer hover:text-white transition-colors" onClick={() => handleSort('valueDiff')}>
+                <span>PLAYER NAME</span> 
+                <span className="text-[11px] font-black font-mono px-1.5 py-0.5 rounded bg-white/5 border border-white/5 text-slate-400">
+                  {sortBy === 'valueDiff' ? (sortOrder === 'desc' ? '▼ VALUE' : '▲ VALUE') : '⇅ VALUE'}
+                </span>
+              </div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('mmr')}>Current MMR {sortBy === 'mmr' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('status')}>Status {sortBy === 'status' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('gp')}>GP {sortBy === 'gp' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center text-yellow-500" onClick={() => handleSort('ovr')}>OVR {sortBy === 'ovr' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center text-cyan-400" onClick={() => handleSort('sbv')}>SBV {sortBy === 'sbv' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('ppg')}>PPG {sortBy === 'ppg' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('gpg')}>GPG {sortBy === 'gpg' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('apg')}>APG {sortBy === 'apg' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('svpg')}>SVPG {sortBy === 'svpg' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+              <div className="col-span-1 text-center" onClick={() => handleSort('winPct')}>Win% {sortBy === 'winPct' && (sortOrder === 'desc' ? '▼' : '▲')}</div>
+            </div>
+
+            <div className="divide-y divide-white/[0.03]">
+              {paginatedPlayers.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500 font-bold uppercase tracking-widest font-mono">No scouting prospects match set criteria</div>
+              ) : (
+                paginatedPlayers.map((player, idx) => {
+                  let expectedSbv = telemetryInsight.hasBaseline ? telemetryInsight.calculateExpectedSbv(player.mmr) : 50;
+                  if (player.mmr === 0 && telemetryInsight.hasBaseline) expectedSbv = parseFloat(telemetryInsight.avgSbv);
+                  const valueDifferential = player.sbv - expectedSbv;
+
+                  let rowShadingClass = ''; let differentialBadge = null;
+                  if (player.gp >= 5) {
+                    if (valueDifferential >= 15) {
+                      rowShadingClass = 'bg-cyan-500/[0.03] border-l-2 border-l-cyan-500';
+                      differentialBadge = <span className="text-[10px] font-mono font-black text-cyan-400 tracking-wider">+{valueDifferential.toFixed(1)} VALUE</span>;
+                    } else if (valueDifferential >= 5) {
+                      rowShadingClass = 'bg-emerald-500/[0.01] border-l-2 border-l-emerald-500/40';
+                      differentialBadge = <span className="text-[10px] font-mono font-bold text-emerald-400 tracking-wider">+{valueDifferential.toFixed(1)} VALUE</span>;
+                    } else if (valueDifferential <= -10) {
+                      rowShadingClass = 'bg-rose-500/[0.01] opacity-75';
+                      differentialBadge = <span className="text-[10px] font-mono text-rose-400 tracking-wider">{valueDifferential.toFixed(1)} DEFICIT</span>;
+                    }
+                  }
+
+                  return (
+                    <div key={idx} className={`grid grid-cols-12 p-4 items-center text-xs font-medium transition-colors hover:bg-white/[0.03] ${rowShadingClass}`}>
+                      <div className="col-span-2 flex items-center gap-3 min-w-0 group/info relative">
+                        <div className="w-6 h-6 bg-white/5 rounded flex items-center justify-center border border-white/10 flex-shrink-0">
+                          {player.status === 'SIGNED' ? (
+                            <img 
+                              src={`/assets/franchises/${player.franchise.split('\n').pop().trim().replace(/[^a-zA-Z0-9\s]/g, '')}.png`} 
+                              onError={(e) => e.target.src = '/assets/rsc-shield.png'} 
+                              className="w-4 h-4 object-contain"
+                            />
+                          ) : (
+                            <img src="/assets/rsc-shield.png" className="w-4 h-4 object-contain opacity-30" />
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-center gap-0.5 min-w-0">
+                          <span className="text-white font-black tracking-tight truncate cursor-default">{player.name}</span>
+                          {differentialBadge}
+                        </div>
+                        {player.status === 'SIGNED' && (
+                          <div className="absolute bottom-full left-2 mb-2 px-3 py-2 bg-slate-950 border border-white/10 rounded-xl shadow-2xl opacity-0 scale-95 pointer-events-none group-hover/info:opacity-100 group-hover/info:scale-100 transition-all z-50 whitespace-nowrap leading-none font-mono">
+                            <p className="text-[11px] font-black text-white uppercase tracking-wider">{player.franchise}</p>
+                            <p 
+                              className="text-[10px] font-black uppercase tracking-tight mt-1"
+                              style={{ color: getTierColor(player.tier) }}
+                            >
+                              {player.team}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-1 text-center font-mono font-bold text-slate-300">{player.mmr || 'N/A'}</div>
+                      <div className="col-span-1 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-tight ${player.status === 'SIGNED' ? 'bg-green-500/10 text-green-400' : player.status === 'Free Agent' ? 'bg-blue-500/10 text-blue-400' : 'bg-slate-800 text-slate-400'}`}>
+                          {player.status}
+                        </span>
+                      </div>
+
+                      <div className="col-span-1 text-center font-mono text-slate-400">{player.gp}</div>
+                      <div className="col-span-1 text-center font-mono font-black text-yellow-500">{player.ovr}</div>
+                      <div className="col-span-1 text-center font-mono font-black text-cyan-400">{player.sbv.toFixed(2)}</div>
+                      <div className="col-span-1 text-center font-mono text-slate-400">{player.ppg.toFixed(1)}</div>
+                      <div className="col-span-1 text-center font-mono text-slate-300">{player.gpg.toFixed(2)}</div>
+                      <div className="col-span-1 text-center font-mono text-slate-300">{player.apg.toFixed(2)}</div>
+                      <div className="col-span-1 text-center font-mono text-slate-300">{player.svpg.toFixed(2)}</div>
+                      <div className="col-span-1 text-center font-mono font-bold text-slate-300">{(player.winPct * 100).toFixed(0)}%</div>
+
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-950/40 p-4 border border-white/5 rounded-xl font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span className="text-slate-500 text-[11px] font-bold uppercase">Show Rows</span>
+            <select
+              value={rowsPerPage} onChange={(e) => { setRowsPerPage(parseInt(e.target.value)); setCurrentPage(1); }}
+              className="p-1 bg-slate-950 border border-white/10 rounded font-bold text-white focus:outline-none cursor-pointer"
+            >
+              {[10, 25, 50].map(val => <option key={val} value={val}>{val}</option>)}
+            </select>
+            <span className="text-slate-500 text-[11px]">
+              Showing {filteredPlayers.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1}-{Math.min(currentPage * rowsPerPage, filteredPlayers.length)} of {filteredPlayers.length} Records
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}
+              className="px-3 py-1.5 rounded bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none font-bold"
+            >
+              ← PREV
+            </button>
+            <span className="text-slate-400">PAGE <span className="text-white font-bold">{currentPage}</span> OF {totalPages}</span>
+            <button
+              disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}
+              className="px-3 py-1.5 rounded bg-slate-900 border border-white/5 text-slate-400 hover:text-white transition-all disabled:opacity-30 disabled:pointer-events-none font-bold"
+            >
+              NEXT →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+}
+
+// --- ROUTER MOUNT WRAPPER (Main Function App) ---
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
